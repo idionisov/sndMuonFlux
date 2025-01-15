@@ -1,0 +1,15 @@
+executable            = trkeff_varAng.sh
+
+output                = output/trkeff_varAng_$(ProcId).out
+error                 = error/trkeff_varAng_$(ProcId).err
+log                   = log/trkeff_varAng_$(ProcId).log
+
+getenv                = False
+notification          = Never
+requirements          = (OpSysAndVer =?= "AlmaLinux9")
+should_transfer_files = IF_NEEDED
+
++JobFlavour           = "workday"
++AccountingGroup      = "group_u_SNDLHC.users"
+
+queue arguments from args_varAng.txt

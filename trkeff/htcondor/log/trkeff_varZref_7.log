@@ -1,0 +1,95 @@
+000 (4398173.007.000) 12/02 10:38:15 Job submitted from host: <188.185.125.71:9618?addrs=188.185.125.71-9618+[2001-1458-d00-4a--100-15e]-9618&alias=bigbird28.cern.ch&noUDP&sock=schedd_2239_58a3>
+...
+040 (4398173.007.000) 12/02 13:01:10 Started transferring input files
+	Transferring to host: <188.185.205.156:9618?addrs=188.185.205.156-9618+[2001-1458-303-a--100-19]-9618&alias=b9p04p7474.cern.ch&noUDP&sock=slot1_9_3714_9950_119273>
+...
+040 (4398173.007.000) 12/02 13:01:10 Finished transferring input files
+...
+001 (4398173.007.000) 12/02 13:01:11 Job executing on host: <188.185.205.156:9618?addrs=188.185.205.156-9618+[2001-1458-303-a--100-19]-9618&alias=b9p04p7474.cern.ch&noUDP&sock=startd_3355_d454>
+	SlotName: slot1_9@b9p04p7474.cern.ch
+	CondorScratchDir = "/pool/condor/dir_1536154"
+	Cpus = 1
+	Disk = 2822478
+	Memory = 2000
+...
+006 (4398173.007.000) 12/02 13:01:20 Image size of job updated: 523396
+	511  -  MemoryUsage of job (MB)
+	523224  -  ResidentSetSize of job (KB)
+...
+006 (4398173.007.000) 12/02 13:06:21 Image size of job updated: 1785104
+	1743  -  MemoryUsage of job (MB)
+	1784280  -  ResidentSetSize of job (KB)
+...
+006 (4398173.007.000) 12/02 13:11:22 Image size of job updated: 1836976
+	1792  -  MemoryUsage of job (MB)
+	1834672  -  ResidentSetSize of job (KB)
+...
+006 (4398173.007.000) 12/02 13:16:22 Image size of job updated: 1844612
+	1798  -  MemoryUsage of job (MB)
+	1840524  -  ResidentSetSize of job (KB)
+...
+006 (4398173.007.000) 12/02 13:21:22 Image size of job updated: 1847320
+	1801  -  MemoryUsage of job (MB)
+	1843464  -  ResidentSetSize of job (KB)
+...
+006 (4398173.007.000) 12/02 13:26:23 Image size of job updated: 1847320
+	1801  -  MemoryUsage of job (MB)
+	1844164  -  ResidentSetSize of job (KB)
+...
+006 (4398173.007.000) 12/02 13:31:23 Image size of job updated: 1853760
+	1805  -  MemoryUsage of job (MB)
+	1848228  -  ResidentSetSize of job (KB)
+...
+006 (4398173.007.000) 12/02 13:41:24 Image size of job updated: 1856884
+	1814  -  MemoryUsage of job (MB)
+	1856692  -  ResidentSetSize of job (KB)
+...
+006 (4398173.007.000) 12/02 13:46:25 Image size of job updated: 1861836
+	1814  -  MemoryUsage of job (MB)
+	1857052  -  ResidentSetSize of job (KB)
+...
+006 (4398173.007.000) 12/02 13:51:25 Image size of job updated: 1861836
+	1814  -  MemoryUsage of job (MB)
+	1857096  -  ResidentSetSize of job (KB)
+...
+006 (4398173.007.000) 12/02 13:56:25 Image size of job updated: 1861944
+	1814  -  MemoryUsage of job (MB)
+	1857096  -  ResidentSetSize of job (KB)
+...
+006 (4398173.007.000) 12/02 14:01:26 Image size of job updated: 1862992
+	1814  -  MemoryUsage of job (MB)
+	1857096  -  ResidentSetSize of job (KB)
+...
+006 (4398173.007.000) 12/02 14:11:26 Image size of job updated: 1862992
+	1816  -  MemoryUsage of job (MB)
+	1858976  -  ResidentSetSize of job (KB)
+...
+006 (4398173.007.000) 12/02 14:16:27 Image size of job updated: 1864556
+	1816  -  MemoryUsage of job (MB)
+	1859252  -  ResidentSetSize of job (KB)
+...
+006 (4398173.007.000) 12/02 14:26:27 Image size of job updated: 1872664
+	1825  -  MemoryUsage of job (MB)
+	1867800  -  ResidentSetSize of job (KB)
+...
+040 (4398173.007.000) 12/02 14:35:43 Started transferring output files
+...
+040 (4398173.007.000) 12/02 14:35:43 Finished transferring output files
+...
+005 (4398173.007.000) 12/02 14:35:43 Job terminated.
+	(1) Normal termination (return value 0)
+		Usr 0 01:29:01, Sys 0 00:00:42  -  Run Remote Usage
+		Usr 0 00:00:00, Sys 0 00:00:00  -  Run Local Usage
+		Usr 0 01:29:01, Sys 0 00:00:42  -  Total Remote Usage
+		Usr 0 00:00:00, Sys 0 00:00:00  -  Total Local Usage
+	605572  -  Run Bytes Sent By Job
+	966  -  Run Bytes Received By Job
+	605572  -  Total Bytes Sent By Job
+	966  -  Total Bytes Received By Job
+	Partitionable Resources :    Usage  Request Allocated 
+	   Cpus                 :     0.99        1         1 
+	   Disk (KB)            :   614           1   2822478 
+	   Memory (MB)          :  1825        2000      2000 
+
+	Job terminated of its own accord at 2024-12-02T13:35:43Z with exit-code 0.
+...

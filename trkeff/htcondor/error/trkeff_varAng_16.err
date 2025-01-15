@@ -1,0 +1,11 @@
+WARNING: not updating modulefiles
+Use alienv list to list loaded modules.
+Loading sndsw/master-local1
+  Loading requirement: BASE/1.0
+Info in <TGeoManager::CloseGeometry>: Geometry loaded from file...
+Info in <TGeoManager::SetTopVolume>: Top volume is cave. Master volume is cave
+Info in <TGeoNavigator::BuildCache>: --- Maximum geometry depth set to 100
+Info in <TGeoManager::Voxelize>: Voxelizing...
+Info in <TGeoManager::CountLevels>: max level = 7, max placements = 2829
+Info in <TGeoManager::CloseGeometry>: 342536 nodes/ 81 volume UID's in FAIR geometry
+Info in <TGeoManager::CloseGeometry>: ----------------modeler ready----------------
