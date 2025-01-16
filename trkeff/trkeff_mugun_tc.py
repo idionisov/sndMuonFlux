@@ -1,4 +1,4 @@
-import glob
+import glob, os
 from time import time
 from array import array
 from SndlhcGeo import GeoInterface
@@ -24,6 +24,7 @@ def main():
     parser.add_argument('-xz', '--xz', type=float, default=20.)
     parser.add_argument('-yz', '--yz', type=float, default=20.)
     parser.add_argument('-o', '--fout', type=str, default="")
+    parser.add_argument('--remote-eos', type=bool, default=False)
 
     args = parser.parse_args()
     e = getRoundedE(args.energy)
@@ -39,11 +40,17 @@ def main():
         fout_name = args.fout
     else:
         fout_name = f"trkeff_muGun.{e}GeV_tc.root"
-    mfout = "/_eos/user/i/idioniso/mfout"
+
+    if args.remote_eos:
+        eos = os.getenv("eos")
+    else:
+        eos = "/EOS/user/i/idioniso"
+
+    mfout = f"{eos}/mfout"
     fout_name = f"{mfout}/trkeff_varE/{fout_name}"
 
-    inputDir = "/_eos/user/i/idioniso/1_Data/Monte_Carlo/muGun/reco"
-    geofile = f'{glob.glob(f"/_eos/user/i/idioniso/1_Data/Monte_Carlo/muGun/sim/pGun_muons_{e}-{e}GeV_0-*")[-1]}/geofile_full.PG_13-TGeant4.root'
+    inputDir = f"{eos}/1_Data/Monte_Carlo/muGun/reco"
+    geofile = f'{glob.glob(f"{eos}/1_Data/Monte_Carlo/muGun/sim/pGun_muons_{e}-{e}GeV_0-*")[-1]}/geofile_full.PG_13-TGeant4.root'
 
     data = SndMCData(InputDir=inputDir, Files=f"muon_reco_MC.gun_{e}-{e}GeV*.root", Geofile=geofile)
     data.InitGeo()

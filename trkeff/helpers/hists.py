@@ -215,78 +215,78 @@ def fillHistsTC(
 
         result["total"] = True
 
-        for trk2 in event.Reco_MuonTracks:
-            trk2 = DdfTrack(Track=trk2, Event=event, IP1_Angle=ip1_angle)
+    for trk2 in event.Reco_MuonTracks:
+        trk2 = DdfTrack(Track=trk2, Event=event, IP1_Angle=ip1_angle)
 
-            if not (
-                trk2.tt==tt and
-                trk2.IsIP1()
-                # abs(tag_trk.XZ-trk2.XZ) <= 0.02 and
-                # abs(tag_trk.YZ-trk2.YZ) <= 0.02
-            ): continue
+        if not (
+            trk2.tt==tt and
+            trk2.IsIP1()
+            # abs(tag_trk.XZ-trk2.XZ) <= 0.02 and
+            # abs(tag_trk.YZ-trk2.YZ) <= 0.02
+        ): continue
 
-            xz_cand = 1e3*trk2.XZ
-            yz_cand = 1e3*trk2.YZ
-            ref2 = trk2.GetPointAtZ(z_ref)
+        xz_cand = 1e3*trk2.XZ
+        yz_cand = 1e3*trk2.YZ
+        ref2 = trk2.GetPointAtZ(z_ref)
 
 
-            if "dxRef" in prpts: h[tt]['dxRef'].Fill(ref2.X()-x_tag, weight)
-            if "dyRef" in prpts: h[tt]['dyRef'].Fill(ref2.Y()-y_tag, weight)
-            if "dxz"   in prpts: h[tt]['dxz'].Fill(xz_cand - xz_tag, weight)
-            if "dyz"   in prpts: h[tt]['dyz'].Fill(yz_cand - yz_tag, weight)
+        if "dxRef" in prpts: h[tt]['dxRef'].Fill(ref2.X()-x_tag, weight)
+        if "dyRef" in prpts: h[tt]['dyRef'].Fill(ref2.Y()-y_tag, weight)
+        if "dxz"   in prpts: h[tt]['dxz'].Fill(xz_cand - xz_tag, weight)
+        if "dyz"   in prpts: h[tt]['dyz'].Fill(yz_cand - yz_tag, weight)
 
-            if not areWithinAllowedDistance(ref_tag, ref2, 3.):
-                continue
+        if not areWithinAllowedDistance(ref_tag, ref2, 3.):
+            continue
 
-            if "x.y" in prpts: h[tt]["x.y"][0].Fill(x_tag, y_tag, weight)
+        if "x.y" in prpts: h[tt]["x.y"][0].Fill(x_tag, y_tag, weight)
 
-            if not isWithinFiducialArea(ref_tag,
-                xmin=xy_eff_range["min"]["x"],
-                xmax=xy_eff_range["max"]["x"],
-                ymin=xy_eff_range["min"]["y"],
-                ymax=xy_eff_range["max"]["y"]
-            ): continue
+        if not isWithinFiducialArea(ref_tag,
+            xmin=xy_eff_range["min"]["x"],
+            xmax=xy_eff_range["max"]["x"],
+            ymin=xy_eff_range["min"]["y"],
+            ymax=xy_eff_range["max"]["y"]
+        ): continue
 
-            if "x"       in prpts: h[tt]["x"][0].Fill(x_tag, weight)
-            if "y"       in prpts: h[tt]["y"][0].Fill(y_tag, weight)
-            if "xz"      in prpts: h[tt]['xz'][0].Fill(xz_tag, weight)
-            if "yz"      in prpts: h[tt]['yz'][0].Fill(yz_tag, weight)
-            if "chi2"    in prpts: h[tt]['chi2'][0].Fill(chi2_tag, weight)
-            if "chi2ndf" in prpts: h[tt]['chi2ndf'][0].Fill(chi2ndf_tag, weight)
-            if "n"       in prpts: h[tt]['n'][0].Fill(n, weight)
-            if "trkP"    in prpts: h[tt]['trkP'][0].Fill(trkP_tag, weight)
-            if "d0"      in prpts: h[tt]['d0'][0].Fill(d0, weight)
+        if "x"       in prpts: h[tt]["x"][0].Fill(x_tag, weight)
+        if "y"       in prpts: h[tt]["y"][0].Fill(y_tag, weight)
+        if "xz"      in prpts: h[tt]['xz'][0].Fill(xz_tag, weight)
+        if "yz"      in prpts: h[tt]['yz'][0].Fill(yz_tag, weight)
+        if "chi2"    in prpts: h[tt]['chi2'][0].Fill(chi2_tag, weight)
+        if "chi2ndf" in prpts: h[tt]['chi2ndf'][0].Fill(chi2ndf_tag, weight)
+        if "n"       in prpts: h[tt]['n'][0].Fill(n, weight)
+        if "trkP"    in prpts: h[tt]['trkP'][0].Fill(trkP_tag, weight)
+        if "d0"      in prpts: h[tt]['d0'][0].Fill(d0, weight)
 
-            if "x.xz"       in prpts: h[tt]['x.xz'][0].Fill(x_tag, xz_tag, weight)
-            if "x.yz"       in prpts: h[tt]['x.yz'][0].Fill(x_tag, yz_tag, weight)
-            if "x.chi2"     in prpts: h[tt]['x.chi2'][0].Fill(x_tag, chi2_tag, weight)
-            if "x.chi2ndf"  in prpts: h[tt]['x.chi2ndf'][0].Fill(x_tag, chi2ndf_tag, weight)
-            if "x.trkP"     in prpts: h[tt]['x.trkP'][0].Fill(x_tag, trkP_tag, weight)
-            if "x.n"        in prpts: h[tt]['x.n'][0].Fill(x_tag, n, weight)
+        if "x.xz"       in prpts: h[tt]['x.xz'][0].Fill(x_tag, xz_tag, weight)
+        if "x.yz"       in prpts: h[tt]['x.yz'][0].Fill(x_tag, yz_tag, weight)
+        if "x.chi2"     in prpts: h[tt]['x.chi2'][0].Fill(x_tag, chi2_tag, weight)
+        if "x.chi2ndf"  in prpts: h[tt]['x.chi2ndf'][0].Fill(x_tag, chi2ndf_tag, weight)
+        if "x.trkP"     in prpts: h[tt]['x.trkP'][0].Fill(x_tag, trkP_tag, weight)
+        if "x.n"        in prpts: h[tt]['x.n'][0].Fill(x_tag, n, weight)
 
-            if "y.xz"       in prpts: h[tt]['y.xz'][0].Fill(y_tag, xz_tag, weight)
-            if "y.yz"       in prpts: h[tt]['y.yz'][0].Fill(y_tag, yz_tag, weight)
-            if "y.chi2"     in prpts: h[tt]['y.chi2'][0].Fill(y_tag, chi2_tag, weight)
-            if "y.chi2ndf"  in prpts: h[tt]['y.chi2ndf'][0].Fill(y_tag, chi2ndf_tag, weight)
-            if "y.trkP"     in prpts: h[tt]['y.trkP'][0].Fill(y_tag, trkP_tag, weight)
-            if "y.n"        in prpts: h[tt]['y.n'][0].Fill(y_tag, n, weight)
+        if "y.xz"       in prpts: h[tt]['y.xz'][0].Fill(y_tag, xz_tag, weight)
+        if "y.yz"       in prpts: h[tt]['y.yz'][0].Fill(y_tag, yz_tag, weight)
+        if "y.chi2"     in prpts: h[tt]['y.chi2'][0].Fill(y_tag, chi2_tag, weight)
+        if "y.chi2ndf"  in prpts: h[tt]['y.chi2ndf'][0].Fill(y_tag, chi2ndf_tag, weight)
+        if "y.trkP"     in prpts: h[tt]['y.trkP'][0].Fill(y_tag, trkP_tag, weight)
+        if "y.n"        in prpts: h[tt]['y.n'][0].Fill(y_tag, n, weight)
 
-            if "xz.x"       in prpts: h[tt]['xz.x'][0].Fill(xz_tag, x_tag, weight)
-            if "xz.y"       in prpts: h[tt]['xz.y'][0].Fill(xz_tag, y_tag, weight)
-            if "xz.yz"      in prpts: h[tt]["xz.yz"][0].Fill(xz_tag, yz_tag, weight)
-            if "xz.chi2"    in prpts: h[tt]['xz.chi2'][0].Fill(xz_tag, chi2_tag, weight)
-            if "xz.chi2ndf" in prpts: h[tt]['xz.chi2ndf'][0].Fill(xz_tag, chi2ndf_tag, weight)
-            if "xz.trkP"    in prpts: h[tt]['xz.trkP'][0].Fill(xz_tag, trkP_tag, weight)
-            if "xz.n"       in prpts: h[tt]['xz.n'][0].Fill(xz_tag, n, weight)
+        if "xz.x"       in prpts: h[tt]['xz.x'][0].Fill(xz_tag, x_tag, weight)
+        if "xz.y"       in prpts: h[tt]['xz.y'][0].Fill(xz_tag, y_tag, weight)
+        if "xz.yz"      in prpts: h[tt]["xz.yz"][0].Fill(xz_tag, yz_tag, weight)
+        if "xz.chi2"    in prpts: h[tt]['xz.chi2'][0].Fill(xz_tag, chi2_tag, weight)
+        if "xz.chi2ndf" in prpts: h[tt]['xz.chi2ndf'][0].Fill(xz_tag, chi2ndf_tag, weight)
+        if "xz.trkP"    in prpts: h[tt]['xz.trkP'][0].Fill(xz_tag, trkP_tag, weight)
+        if "xz.n"       in prpts: h[tt]['xz.n'][0].Fill(xz_tag, n, weight)
 
-            if "yz.x"       in prpts: h[tt]['yz.x'][0].Fill(yz_tag, x_tag, weight)
-            if "yz.y"       in prpts: h[tt]['yz.y'][0].Fill(yz_tag, y_tag, weight)
-            if "yz.chi2"    in prpts: h[tt]['yz.chi2'][0].Fill(yz_tag, chi2_tag, weight)
-            if "yz.chi2ndf" in prpts: h[tt]['yz.chi2ndf'][0].Fill(yz_tag, chi2ndf_tag, weight)
-            if "yz.trkP"    in prpts: h[tt]['yz.trkP'][0].Fill(yz_tag, trkP_tag, weight)
-            if "yz.n"       in prpts: h[tt]['yz.n'][0].Fill(yz_tag, n, weight)
+        if "yz.x"       in prpts: h[tt]['yz.x'][0].Fill(yz_tag, x_tag, weight)
+        if "yz.y"       in prpts: h[tt]['yz.y'][0].Fill(yz_tag, y_tag, weight)
+        if "yz.chi2"    in prpts: h[tt]['yz.chi2'][0].Fill(yz_tag, chi2_tag, weight)
+        if "yz.chi2ndf" in prpts: h[tt]['yz.chi2ndf'][0].Fill(yz_tag, chi2ndf_tag, weight)
+        if "yz.trkP"    in prpts: h[tt]['yz.trkP'][0].Fill(yz_tag, trkP_tag, weight)
+        if "yz.n"       in prpts: h[tt]['yz.n'][0].Fill(yz_tag, n, weight)
 
-            result["passed"] = True
+        result["passed"] = True
     return result
 
 
@@ -350,60 +350,60 @@ def fillHistsRT(
 
         result["total"] = True
 
-        for trk2 in event.Reco_MuonTracks:
-            trk2 = DdfTrack(Track=trk2, Event=event, IP1_Angle=ip1_angle)
+    for trk2 in event.Reco_MuonTracks:
+        trk2 = DdfTrack(Track=trk2, Event=event, IP1_Angle=ip1_angle)
 
-            if not (
-                trk2.tt==tt and
-                trk2.IsGood(xz_min=-ip1_angle/1e3, xz_max=ip1_angle/1e3, yz_min=-ip1_angle/1e3, yz_max=ip1_angle/1e3)
-            ): continue
+        if not (
+            trk2.tt==tt and
+            trk2.IsGood(xz_min=-ip1_angle/1e3, xz_max=ip1_angle/1e3, yz_min=-ip1_angle/1e3, yz_max=ip1_angle/1e3)
+        ): continue
 
-            xz_cand = 1e3*trk2.XZ
-            yz_cand = 1e3*trk2.YZ
-            ref2 = trk2.GetPointAtZ(z_ref)
+        xz_cand = 1e3*trk2.XZ
+        yz_cand = 1e3*trk2.YZ
+        ref2 = trk2.GetPointAtZ(z_ref)
 
-            if "dxRef" in prpts: h[tt]['dxRef'].Fill(ref2.X()-x_tag, weight)
-            if "dyRef" in prpts: h[tt]['dyRef'].Fill(ref2.Y()-y_tag, weight)
-            if "dxz"   in prpts: h[tt]['dxz'].Fill(xz_cand - xz_tag, weight)
-            if "dyz"   in prpts: h[tt]['dyz'].Fill(yz_cand - yz_tag, weight)
+        if "dxRef" in prpts: h[tt]['dxRef'].Fill(ref2.X()-x_tag, weight)
+        if "dyRef" in prpts: h[tt]['dyRef'].Fill(ref2.Y()-y_tag, weight)
+        if "dxz"   in prpts: h[tt]['dxz'].Fill(xz_cand - xz_tag, weight)
+        if "dyz"   in prpts: h[tt]['dyz'].Fill(yz_cand - yz_tag, weight)
 
-            if not areWithinAllowedDistance(ref_tag, ref2, 3.):
-                continue
+        if not areWithinAllowedDistance(ref_tag, ref2, 3.):
+            continue
 
-            if "x.y" in prpts: h[tt]["x.y"][0].Fill(x_tag, y_tag, weight)
+        if "x.y" in prpts: h[tt]["x.y"][0].Fill(x_tag, y_tag, weight)
 
-            if not isWithinFiducialArea(ref_tag,
-                xmin=xy_eff_range["min"]["x"],
-                xmax=xy_eff_range["max"]["x"],
-                ymin=xy_eff_range["min"]["y"],
-                ymax=xy_eff_range["max"]["y"]
-            ): continue
+        if not isWithinFiducialArea(ref_tag,
+            xmin=xy_eff_range["min"]["x"],
+            xmax=xy_eff_range["max"]["x"],
+            ymin=xy_eff_range["min"]["y"],
+            ymax=xy_eff_range["max"]["y"]
+        ): continue
 
-            if "x"       in prpts: h[tt]["x"][0].Fill(x_tag, weight)
-            if "y"       in prpts: h[tt]["y"][0].Fill(y_tag, weight)
-            if "xz"      in prpts: h[tt]['xz'][0].Fill(xz_tag, weight)
-            if "yz"      in prpts: h[tt]['yz'][0].Fill(yz_tag, weight)
-            if "n"       in prpts: h[tt]['n'][0].Fill(n, weight)
-            if "d0"      in prpts: h[tt]['d0'][0].Fill(d0, weight)
+        if "x"       in prpts: h[tt]["x"][0].Fill(x_tag, weight)
+        if "y"       in prpts: h[tt]["y"][0].Fill(y_tag, weight)
+        if "xz"      in prpts: h[tt]['xz'][0].Fill(xz_tag, weight)
+        if "yz"      in prpts: h[tt]['yz'][0].Fill(yz_tag, weight)
+        if "n"       in prpts: h[tt]['n'][0].Fill(n, weight)
+        if "d0"      in prpts: h[tt]['d0'][0].Fill(d0, weight)
 
-            if "x.xz"       in prpts: h[tt]['x.xz'][0].Fill(x_tag, xz_tag, weight)
-            if "x.yz"       in prpts: h[tt]['x.yz'][0].Fill(x_tag, yz_tag, weight)
-            if "x.n"        in prpts: h[tt]['x.n'][0].Fill(x_tag, n, weight)
+        if "x.xz"       in prpts: h[tt]['x.xz'][0].Fill(x_tag, xz_tag, weight)
+        if "x.yz"       in prpts: h[tt]['x.yz'][0].Fill(x_tag, yz_tag, weight)
+        if "x.n"        in prpts: h[tt]['x.n'][0].Fill(x_tag, n, weight)
 
-            if "y.xz"       in prpts: h[tt]['y.xz'][0].Fill(y_tag, xz_tag, weight)
-            if "y.yz"       in prpts: h[tt]['y.yz'][0].Fill(y_tag, yz_tag, weight)
-            if "y.n"        in prpts: h[tt]['y.n'][0].Fill(y_tag, n, weight)
+        if "y.xz"       in prpts: h[tt]['y.xz'][0].Fill(y_tag, xz_tag, weight)
+        if "y.yz"       in prpts: h[tt]['y.yz'][0].Fill(y_tag, yz_tag, weight)
+        if "y.n"        in prpts: h[tt]['y.n'][0].Fill(y_tag, n, weight)
 
-            if "xz.x"       in prpts: h[tt]['xz.x'][0].Fill(xz_tag, x_tag, weight)
-            if "xz.y"       in prpts: h[tt]['xz.y'][0].Fill(xz_tag, y_tag, weight)
-            if "xz.yz"      in prpts: h[tt]["xz.yz"][0].Fill(xz_tag, yz_tag, weight)
-            if "xz.n"       in prpts: h[tt]['xz.n'][0].Fill(xz_tag, n, weight)
+        if "xz.x"       in prpts: h[tt]['xz.x'][0].Fill(xz_tag, x_tag, weight)
+        if "xz.y"       in prpts: h[tt]['xz.y'][0].Fill(xz_tag, y_tag, weight)
+        if "xz.yz"      in prpts: h[tt]["xz.yz"][0].Fill(xz_tag, yz_tag, weight)
+        if "xz.n"       in prpts: h[tt]['xz.n'][0].Fill(xz_tag, n, weight)
 
-            if "yz.x"       in prpts: h[tt]['yz.x'][0].Fill(yz_tag, x_tag, weight)
-            if "yz.y"       in prpts: h[tt]['yz.y'][0].Fill(yz_tag, y_tag, weight)
-            if "yz.n"       in prpts: h[tt]['yz.n'][0].Fill(yz_tag, n, weight)
+        if "yz.x"       in prpts: h[tt]['yz.x'][0].Fill(yz_tag, x_tag, weight)
+        if "yz.y"       in prpts: h[tt]['yz.y'][0].Fill(yz_tag, y_tag, weight)
+        if "yz.n"       in prpts: h[tt]['yz.n'][0].Fill(yz_tag, n, weight)
 
-            result["passed"] = True
+        result["passed"] = True
     return result
 
 

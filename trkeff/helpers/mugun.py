@@ -1,3 +1,4 @@
+import ROOT
 from typing import Union
 
 xy_full_range = {

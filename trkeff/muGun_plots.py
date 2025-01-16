@@ -4,7 +4,7 @@ from sndUtils import system, algorithm
 import matplotlib.pyplot as plt
 plt.style.use("root")
 
-mfout = "/_eos/user/i/idioniso/mfout"
+mfout = "/EOS/user/i/idioniso/mfout"
 energies = [10, 12.5, 15, 17.5, 20, 25, 30, 35, 55, 100, 200, 300, 600, 800, 1010]
 
 eff      = {a: {tt: np.zeros(len(energies), dtype=np.float64) for tt in (1, 11, 3, 13)} for a in ("rt", "tc")}
