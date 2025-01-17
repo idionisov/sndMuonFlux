@@ -1,0 +1,37 @@
+
+Thread 2 (Thread 0x7f9a7bdf1640 (LWP 76477) "python"):
+#0  0x00007f9acf4868ba in __futex_abstimed_wait_common () from /lib64/libc.so.6
+#1  0x00007f9acf4893c4 in pthread_cond_timedwait
+
+GLIBC_2.3.2 () from /lib64/libc.so.6
+#2  0x00007f9acf919291 in take_gil () from /lib64/libpython3.9.so.1.0
+#3  0x00007f9acf95ef06 in PyEval_RestoreThread () from /lib64/libpython3.9.so.1.0
+#4  0x00007f9acfa501f7 in time_sleep () from /lib64/libpython3.9.so.1.0
+#5  0x00007f9acf940a47 in cfunction_vectorcall_O () from /lib64/libpython3.9.so.1.0
+#6  0x00007f9acf93548f in _PyEval_EvalFrameDefault () from /lib64/libpython3.9.so.1.0
+#7  0x00007f9acf92ec18 in _PyEval_EvalCode () from /lib64/libpython3.9.so.1.0
+#8  0x00007f9acf941315 in _PyFunction_Vectorcall () from /lib64/libpython3.9.so.1.0
+#9  0x00007f9acf933a79 in _PyEval_EvalFrameDefault () from /lib64/libpython3.9.so.1.0
+#10 0x00007f9acf94160b in function_code_fastcall () from /lib64/libpython3.9.so.1.0
+#11 0x00007f9acf9303ac in _PyEval_EvalFrameDefault () from /lib64/libpython3.9.so.1.0
+#12 0x00007f9acf94160b in function_code_fastcall () from /lib64/libpython3.9.so.1.0
+#13 0x00007f9acf9303ac in _PyEval_EvalFrameDefault () from /lib64/libpython3.9.so.1.0
+#14 0x00007f9acf94160b in function_code_fastcall () from /lib64/libpython3.9.so.1.0
+#15 0x00007f9acf94f9e5 in method_vectorcall () from /lib64/libpython3.9.so.1.0
+#16 0x00007f9acfa2ec5a in t_bootstrap () from /lib64/libpython3.9.so.1.0
+#17 0x00007f9acfa2eac8 in pythread_wrapper () from /lib64/libpython3.9.so.1.0
+#18 0x00007f9acf489d22 in start_thread () from /lib64/libc.so.6
+#19 0x00007f9acf50ed40 in clone3 () from /lib64/libc.so.6
+
+Thread 1 (Thread 0x7f9acfc4a480 (LWP 76420) "python"):
+#0  0x00007f9acf4d8b3f in wait4 () from /lib64/libc.so.6
+#1  0x00007f9acf44b283 in do_system () from /lib64/libc.so.6
+#2  0x00007f9ac1af9cdc in TUnixSystem::Exec (shellcmd=<optimized out>, this=0x55fbe8ad6a50) at /cvmfs/sndlhc.cern.ch/SNDLHC-2024/June25/sw/SOURCES/ROOT/v6-28-04/v6-28-04/core/unix/src/TUnixSystem.cxx:2104
+#3  TUnixSystem::StackTrace (this=0x55fbe8ad6a50) at /cvmfs/sndlhc.cern.ch/SNDLHC-2024/June25/sw/SOURCES/ROOT/v6-28-04/v6-28-04/core/unix/src/TUnixSystem.cxx:2395
+#4  0x00007f9a91fab399 in FairLogger::LogFatalMessage () at /cvmfs/sndlhc.cern.ch/SNDLHC-2024/June25/sw/SOURCES/FairRoot/v18.4.9/v18.4.9/fairtools/FairLogger.cxx:195
+#5  0x00007f9a91f752b4 in std::function<void ()>::operator()() const (this=0x7f9a91f9e720 <fair::Logger::fFatalCallback>) at /usr/include/c++/11/bits/std_function.h:590
+#6  fair::Logger::~Logger (this=0x7ffde900f8a0, __in_chrg=<optimized out>) at /cvmfs/sndlhc.cern.ch/SNDLHC-2024/June25/sw/SOURCES/FairLogger/v1.9.0/v1.9.0/logger/Logger.cxx:267
+#7  0x00007f9a946b5ee9 in FairMCApplication::InitMC (this=0x55fbecf15100) at /cvmfs/sndlhc.cern.ch/SNDLHC-2024/June25/sw/slc9_x86-64/FairLogger/v1.9.0-local1/include/fairlogger/Logger.h:305
+#8  0x00007f9a9470be74 in FairRunSim::Init (this=0x55fbfb0fa160) at /cvmfs/sndlhc.cern.ch/SNDLHC-2024/June25/sw/SOURCES/FairRoot/v18.4.9/v18.4.9/base/steer/FairRunSim.cxx:243
+#9  0x00007f9a916ec00d in ?? ()
+#10 0x0000000000000000 in ?? ()
