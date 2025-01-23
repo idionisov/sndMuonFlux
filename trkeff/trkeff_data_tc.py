@@ -42,7 +42,7 @@ def main():
 
 
     geofile = "/eos/experiment/sndlhc/convertedData/physics/2023_reprocess/geofile_sndlhc_TI18_V4v2_2023.root"
-    data = SndData(Run=run, InputDir="/_eos/user/i/idioniso/1_Data/Tracks", Files=files, Geofile=geofile)
+    data = SndData(Run=run, InputDir="/eos/user/i/idioniso/1_Data/Tracks", Files=files, Geofile=geofile)
     data.InitGeo()
     data.Print()
 
