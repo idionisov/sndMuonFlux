@@ -76,7 +76,7 @@ def main():
 
 
     header = ["run"]
-    data = [[]]
+    data = [[run]]
     for tt in TTs:
         for a in "IP1", "all":
             header.append(f"ntracks_{tt}_{a}")

@@ -39,11 +39,11 @@ def main():
         fout_name = args.fout
     else:
         fout_name = f"trkeff_muGun.{e}GeV_rt.root"
-    mfout = "/_eos/user/i/idioniso/mfout"
-    fout_name = f"{mfout}/trkeff_varE/{fout_name}"
+    mfout = "/eos/user/i/idioniso/mfout"
+    fout_name = f"{mfout}/trkeff/trkeff-E/{fout_name}"
 
-    inputDir = "/_eos/user/i/idioniso/1_Data/Monte_Carlo/muGun/reco"
-    geofile = f'{glob.glob(f"/_eos/user/i/idioniso/1_Data/Monte_Carlo/muGun/sim/pGun_muons_{e}-{e}GeV_0-*")[-1]}/geofile_full.PG_13-TGeant4.root'
+    inputDir = "/eos/user/i/idioniso/1_Data/Monte_Carlo/muGun/reco"
+    geofile = f'{glob.glob(f"/eos/user/i/idioniso/1_Data/Monte_Carlo/muGun/sim/pGun_muons_{e}-{e}GeV_0-*")[-1]}/geofile_full.PG_13-TGeant4.root'
 
     data = SndMCData(InputDir=inputDir, Files=f"muon_reco_MC.gun_{e}-{e}GeV*.root", Geofile=geofile)
     data.InitGeo()
@@ -59,6 +59,7 @@ def main():
     count = 0
     tree = data.Tree
     nEntries = tree.GetEntries()
+    a = {tt: {"passed": 0, "total": 0} for tt in (1, 11, 3, 13)}
 
     for i_event, event in enumerate(tree):
         count = printStatus(i_event, nEntries, start_time, count)
@@ -85,33 +86,34 @@ def main():
 
                 passed[tt] += 1
 
-            # for mcTrack in event.MCTrack:
+            for mcTrack in event.MCTrack:
 
-            #     ddfMCTrack = DdfMCTrack(mcTrack, Event=event, IP1_Angle=20.)
-                # if not (
-                #     ddfMCTrack.XZ <= xz_max/1e3 and
-                #     ddfMCTrack.XZ >= xz_min/1e3 and
-                #     ddfMCTrack.YZ <= yz_max/1e3 and
-                #     ddfMCTrack.YZ >= yz_min/1e3
-                # ): continue
+                ddfMCTrack = DdfMCTrack(mcTrack, Event=event, IP1_Angle=20.)
+                if not (
+                    ddfMCTrack.XZ <= xz_max/1e3 and
+                    ddfMCTrack.XZ >= xz_min/1e3 and
+                    ddfMCTrack.YZ <= yz_max/1e3 and
+                    ddfMCTrack.YZ >= yz_min/1e3
+                ): continue
 
-            #     total[tt] += 1
+                if not (ddfMCTrack.IsWithinDS3() and ddfMCTrack.IsWithinSF1()):
+                    continue
 
-            #     flag = fillHistsRT(h, ddfMCTrack, "muGun.rt", z_ref[tt], tt)
-            #     if flag:
-            #         passed[tt]+=1
+                flag = fillHistsRT(h, ddfMCTrack, "muGun.rt", z_ref[tt], tt)
+                if flag["passed"]: a[tt]["passed"] += 1
+                if flag["total"]:  a[tt]["total"] += 1
 
 
-    # teff = getTEffDict(h, statOption='kfcp', suffix="rt")
-    # eq = getFitEq(teff, "muGun.tc", track_types)
-    # saveToRoot(teff, fout=fout, nested=False, print_filename=True)
+    teff = getTEffDict(h, statOption='kfcp', suffix="rt")
+    eq = getFitEq(teff, "muGun.tc", track_types)
+    saveToRoot(teff, fout=fout, nested=False, print_filename=True)
 
     eff = {}
     for tt in (1, 11, 3, 13):
-        # h[tt]["dxRef"].Write()
-        # h[tt]["dyRef"].Write()
-        # h[tt]["dxz"].Write()
-        # h[tt]["dyz"].Write()
+        h[tt]["dxRef"].Write()
+        h[tt]["dyRef"].Write()
+        h[tt]["dxz"].Write()
+        h[tt]["dyz"].Write()
 
         eff[tt] = {}
 
@@ -123,6 +125,9 @@ def main():
 
         eff[tt]['eff'][0], eff[tt]['effErrUp'][0], eff[tt]['effErrLow'][0] = getEffWithError(passed[tt], total[tt])
         print(f" >> {tt}:\t{(eff[tt]['eff'][0], eff[tt]['effErrUp'][0], eff[tt]['effErrLow'][0])}")
+
+        a0, a0h, a0l = getEffWithError(a[tt]["passed"], a[tt]["total"])
+        print(f" ~~ {tt}:\t{(a0, a0h, a0l)}")
 
         eff[tt]['tree'].Branch(f"eff",        eff[tt]['eff'],       "eff/F")
         eff[tt]['tree'].Branch("effErrUp",    eff[tt]['effErrUp'],  "effErrUp/F")

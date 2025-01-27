@@ -21,8 +21,8 @@ def main():
     parser.add_argument('-i', '--files', type=str, default='*')
     parser.add_argument('-e', '--energy', type=float, default=200)
     parser.add_argument('-z', '--z_ref', nargs="+", type=float, default=[430., 450., 430., 450.])
-    parser.add_argument('-xz', '--xz', type=float, default=20.)
-    parser.add_argument('-yz', '--yz', type=float, default=20.)
+    parser.add_argument('-xz', '--xz', type=float, default=12.5)
+    parser.add_argument('-yz', '--yz', type=float, default=12.5)
     parser.add_argument('-o', '--fout', type=str, default="")
     parser.add_argument('--remote-eos', type=bool, default=False)
 
@@ -47,7 +47,7 @@ def main():
         eos = "/EOS/user/i/idioniso"
 
     mfout = f"{eos}/mfout"
-    fout_name = f"{mfout}/trkeff_varE/{fout_name}"
+    fout_name = f"{mfout}/trkeff/trkeff-E/{fout_name}"
 
     inputDir = f"{eos}/1_Data/Monte_Carlo/muGun/reco"
     geofile = f'{glob.glob(f"{eos}/1_Data/Monte_Carlo/muGun/sim/pGun_muons_{e}-{e}GeV_0-*")[-1]}/geofile_full.PG_13-TGeant4.root'
