@@ -17,28 +17,29 @@ def main():
     parser = argparse.ArgumentParser()
 
     parser.add_argument('-r', '--run', type=int, default=7080)
-    parser.add_argument('-i', '--files', type=str, default='*')
+    parser.add_argument('-i', '--files', type=str, default='*f10*.root')
     parser.add_argument('-z', '--z_ref', nargs="+", type=float, default=[430., 450., 430., 450.])
     parser.add_argument('-xz', '--xz', type=float, default=20.)
     parser.add_argument('-yz', '--yz', type=float, default=20.)
     parser.add_argument('-o', '--fout', type=str, default="")
+    parser.add_argument('--chi2ndf', nargs="+", type=float, default=[1e6, 1e6, 1e6, 1e6])
 
     args = parser.parse_args()
     run = args.run
     track_types = (1, 11, 3, 13)
     files = args.files
     z_ref = {1: args.z_ref[0], 11: args.z_ref[1], 3: args.z_ref[2], 13: args.z_ref[3]}
+    chi2ndf = {1: args.chi2ndf[0], 11: args.chi2ndf[1], 3: args.chi2ndf[2], 13: args.chi2ndf[3]}
     xz_min = -abs(args.xz)
     xz_max =  abs(args.xz)
     yz_min = -abs(args.yz)
     yz_max =  abs(args.yz)
 
+    mfout = "/eos/user/i/idioniso/mfout"
     if args.fout:
         fout_name = args.fout
     else:
-        fout_name = f"trkeff_Run{run}_tc.root"
-    mfout = "/eos/user/i/idioniso/mfout"
-    fout_name = f"{mfout}/{fout_name}"
+        fout_name = f"{mfout}/trkeff_Run{run}_tc.root"
 
 
     geofile = "/eos/experiment/sndlhc/convertedData/physics/2023_reprocess/geofile_sndlhc_TI18_V4v2_2023.root"
@@ -73,12 +74,15 @@ def main():
                 if tag_trk.tt==1 or tag_trk.tt==11:
                     if not (
                         tag_trk.IsWithinUS5Bar(data.Mufi, event.Digi_MuFilterHits) and
-                        tag_trk.IsWithinDS3()
+                        tag_trk.IsWithinDS3() and
+                        tag_trk.Chi2Ndf <= chi2ndf[tag_trk.tt]
                     ): continue
 
                 elif (tag_trk.tt==3 or tag_trk.tt==13):
-                    if not tag_trk.IsWithinVetoBar(data.Mufi, event.Digi_MuFilterHits):
-                        continue
+                    if not (
+                        tag_trk.IsWithinVetoBar(data.Mufi, event.Digi_MuFilterHits) and
+                        tag_trk.Chi2Ndf <= chi2ndf[tag_trk.tt]
+                    ): continue
 
                 else: continue
 

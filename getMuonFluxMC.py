@@ -2,16 +2,16 @@ import ROOT
 import uproot
 import os, csv
 import numpy as np
+import pandas as pd
 from time import time
 from sndUtils import DdfTrack, SndMCData, sys, alg
 
 
 
-def getEffWithErr(run: int, tt: int) -> tuple:
-    i = uproot.open(f"/eos/user/i/idioniso/mfout/trkeffDataTC.root:Run{run}")[f"eff_{tt}_data.tc"]
-
-    eff    = i["eff"].array(library="np")[0]
-    effErr = i["effErr"].array(library="np")[0]
+def getEffWithErr(csv: str, tt: int) -> tuple:
+    df = pd.read_csv(csv, index_col="run")
+    eff    = df.at[-1, f"trkeff_{tt}"]
+    effErr = df.at[-1, f"trkeffErr_{tt}"]
 
     return eff, effErr
 
@@ -34,6 +34,7 @@ def main():
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument('-i', '--input-dir', type=str, default="/eos/user/i/idioniso/1_Data/Monte_Carlo")
+    parser.add_argument('--trkeff', type=str, default="/eos/user/i/idioniso/mfout/trkeff.csv")
 
     args = parser.parse_args()
 
@@ -69,7 +70,7 @@ def main():
     eps = {}
     for tt in track_types:
         eps[tt] = {}
-        eps[tt]['v'], eps[tt]['e'] = getEffWithErr(7080, tt)
+        eps[tt]['v'], eps[tt]['e'] = getEffWithErr(args.trkeff, tt)
 
 
     eventMCmu = {i: {} for i in ("EMD", "NI")}
