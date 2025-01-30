@@ -17,7 +17,7 @@ def main():
     parser = argparse.ArgumentParser()
 
     parser.add_argument('-r', '--run', type=int, default=7080)
-    parser.add_argument('-i', '--files', type=str, default='*f10*.root')
+    parser.add_argument('-f', '--files', type=str, default='*f10*.root')
     parser.add_argument('-z', '--z_ref', nargs="+", type=float, default=[430., 450., 430., 450.])
     parser.add_argument('-xz', '--xz', type=float, default=20.)
     parser.add_argument('-yz', '--yz', type=float, default=20.)
