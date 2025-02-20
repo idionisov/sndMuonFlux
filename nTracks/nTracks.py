@@ -1,11 +1,22 @@
 import os
 from time import time
 import ROOT
+import numpy as np
+import pandas as pd
+import uproot
 
 
 from sndUtils import SndData, DdfTrack
 from ddfUtils import printStatus
 from helpers import getEosDir, getInputDir, getOutput, saveToCsv, xy_eff_range
+
+
+
+def updateNtracks(rootFile: str = "/eos/user/i/idioniso/mfout/MuonFlux.root"):
+    df = pd.read_csv("/eos/user/i/idioniso/mfout/nTracks.csv")
+
+    with uproot.update(rootFile) as f:
+        f["nTracks"] = df
 
 
 def main():
@@ -20,10 +31,12 @@ def main():
     parser.add_argument('-xz', '--xz', type=float, default=20.)
     parser.add_argument('-yz', '--yz', type=float, default=20.)
     parser.add_argument('--remote-eos', type=bool, default=True)
+    parser.add_argument('--scale', type=int, default=1)
 
     args = parser.parse_args()
 
     run = args.run
+    scale = args.scale
     input = getInputDir(args.input_dir, args.remote_eos)
     fout = getOutput(args.fout, args.remote_eos)
 
@@ -79,10 +92,16 @@ def main():
     data = [[run]]
     for tt in TTs:
         for a in "IP1", "all":
-            header.append(f"ntracks_{tt}_{a}")
+            if a == "IP1":
+                header.append(f"nTracks{tt}")
+            else:
+                header.append(f"nTracks{tt}Total")
             data[0].append(nTracks[a][tt])
+    header.append("scale")
+    data[0].append(scale)
 
     saveToCsv(header, data, fout)
+    #updateNtracks("/eos/user/i/idioniso/mfout/MuonFlux.root")
 
 
 if __name__=="__main__":

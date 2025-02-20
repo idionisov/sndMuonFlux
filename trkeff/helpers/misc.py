@@ -1,6 +1,6 @@
 from typing import Union
 from array import array
-from ddfRoot import DdfEff, getGraphFromTEff1D, getGraphFromTEff2D, getNumpyFromTH2
+from ddfRoot import DdfEff, getGraphFromTEff, getAsNumpy
 from ddfUtils import getEffWithError
 from hists import xy_eff_range
 from sndUtils import system, algorithm
@@ -23,7 +23,7 @@ def getFitEq(
             if isinstance(teff[tt][xy], DdfEff):
                 teff[tt][xy].GetGraph().Fit(eq[tt][xy], "SRQ0+")
             elif isinstance(teff[tt][xy], ROOT.TEfficiency):
-                getGraphFromTEff1D(teff[tt][xy]).Fit(eq[tt][xy], "SRQ0+")
+                getGraphFromTEff(teff[tt][xy]).Fit(eq[tt][xy], "SRQ0+")
             else:
                 continue
     return eq
@@ -96,7 +96,7 @@ def saveEffsData(
         eff[tt]['eff']    = array('f', [ 0. ])
         eff[tt]['effErr'] = array('f', [ 0. ])
 
-        _eff, _deff_low, _deff_up, _eff_xEdges, _eff_yEdges = getNumpyFromTH2(hist,
+        _eff, _deff_low, _deff_up, _eff_xEdges, _eff_yEdges = getAsNumpy(hist,
             xmin=xy_eff_range["min"]["x"],
             xmax=xy_eff_range["max"]["x"],
             ymin=xy_eff_range["min"]["y"],
