@@ -1,6 +1,7 @@
 import ROOT
+from typing import Union
 import numpy as np
-from sndUtils import DdfTrack, DdfMCTrack
+from sndUtils import DdfTrack, DdfMCTrack, sfTrackIsReconstructible, dsTrackIsReconstructible
 from ddfRoot import getN
 from get_hists.x_h import *
 from get_hists.y_h import *
@@ -294,14 +295,16 @@ def fillHistsTC(
 
 def fillHistsRT(
     h:            dict,
+    flag:         dict,
     tag_trk:      DdfMCTrack,
     mcSet:        str,
     z_ref:        float = 450.,
     tt:           int = 1,
     ip1_angle:    float = 20.,
-    weight:       Union[int, float] = 1,
-) -> dict:
-    result = {"total": False, "passed": False}
+    weight:       Union[int, float] = 1
+):
+    if not flag["total"][tt]:
+        return
 
     event = tag_trk.Event
     ref_tag = tag_trk.GetPointAtZ(z_ref)
@@ -348,14 +351,13 @@ def fillHistsRT(
         if "yz.y"       in prpts: h[tt]['yz.y'][1].Fill(yz_tag, y_tag, weight)
         if "yz.n"       in prpts: h[tt]['yz.n'][1].Fill(yz_tag, n, weight)
 
-        result["total"] = True
-
     for trk2 in event.Reco_MuonTracks:
         trk2 = DdfTrack(Track=trk2, Event=event, IP1_Angle=ip1_angle)
 
         if not (
             trk2.tt==tt and
-            trk2.IsGood(xz_min=-ip1_angle/1e3, xz_max=ip1_angle/1e3, yz_min=-ip1_angle/1e3, yz_max=ip1_angle/1e3)
+            trk2.IsGood(xz_min=-ip1_angle/1e3, xz_max=ip1_angle/1e3, yz_min=-ip1_angle/1e3, yz_max=ip1_angle/1e3) and
+            flag["passed"][tt]
         ): continue
 
         xz_cand = 1e3*trk2.XZ
@@ -403,10 +405,102 @@ def fillHistsRT(
         if "yz.y"       in prpts: h[tt]['yz.y'][0].Fill(yz_tag, y_tag, weight)
         if "yz.n"       in prpts: h[tt]['yz.n'][0].Fill(yz_tag, n, weight)
 
-        result["passed"] = True
-    return result
 
 
+def getEffRT(
+    event:        ROOT.TChain,
+    h:            dict,
+    mcSet:        str,
+    z_ref:        dict = {1: 430., 11: 450, 3: 430., 13: 450},
+    ip1_angle:    float = 20.,
+    weight:       Union[int, float] = 1,
+    track_types:  tuple = (1, 11, 3, 13),
+    xz_min:       float = -20.,
+    yz_min:       float = -20.,
+    xz_max:       float =  20.,
+    yz_max:       float =  20.,
+):
+    _sf = sfTrackIsReconstructible(event)
+    _ds = dsTrackIsReconstructible(event)
+
+    flag = {
+        "passed": {tt: False for tt in track_types},
+        "total":  {tt: False for tt in track_types}
+    }
+    if _sf==False and _ds==False:
+        return flag
+
+    reco = {1: _sf, 11: _sf, 3: _ds, 13: _ds}
+
+    for tt in track_types:
+        if not reco[tt]:
+            continue
+
+        flag["total"][tt] = True
+
+        for trk in event.Reco_MuonTracks:
+            if trk.getTrackType() != tt:
+                continue
+            flag["passed"][tt] = True
+
+            for mcTrack in event.MCTrack:
+                ddfMCTrack = DdfMCTrack(mcTrack, Event=event, IP1_Angle=20.)
+                if not (
+                    ddfMCTrack.XZ <= xz_max/1e3 and
+                    ddfMCTrack.XZ >= xz_min/1e3 and
+                    ddfMCTrack.YZ <= yz_max/1e3 and
+                    ddfMCTrack.YZ >= yz_min/1e3
+                ): continue
+
+                if not (ddfMCTrack.IsWithinDS3() and ddfMCTrack.IsWithinSF1()):
+                    continue
+
+                fillHistsRT(h, flag, ddfMCTrack, "muGun.rt", z_ref[tt], tt)
+                break
+    return flag
+
+
+
+def getEffNRT(
+    event:        ROOT.TChain,
+    h:            dict,
+    mcSet:        str,
+    z_ref:        dict = {1: 430., 11: 450, 3: 430., 13: 450},
+    ip1_angle:    float = 20.,
+    weight:       Union[int, float] = 1,
+    track_types:  tuple = (1, 11, 3, 13),
+    xz_min:       float = -20.,
+    yz_min:       float = -20.,
+    xz_max:       float =  20.,
+    yz_max:       float =  20.,
+):
+    _sf = sfTrackIsReconstructible(event)
+    _ds = dsTrackIsReconstructible(event)
+
+    flag = {
+        "passed": {tt: False for tt in track_types},
+        "total":  {tt: False for tt in track_types}
+    }
+    if _sf==False and _ds==False:
+        return flag
+
+    reco = {1: _sf, 11: _sf, 3: _ds, 13: _ds}
+
+    for tt in track_types:
+        if not reco[tt]:
+            continue
+        n = getN(tt, event)
+
+        h[tt]['n'][1].Fill(n, weight)
+        flag["total"][tt] = True
+
+        for trk in event.Reco_MuonTracks:
+            if trk.getTrackType() != tt:
+                continue
+            flag["passed"][tt] = True
+            h[tt]['n'][0].Fill(n, weight)
+
+    return flag
 
 
 

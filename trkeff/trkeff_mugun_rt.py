@@ -8,7 +8,7 @@ from sndUtils import SndMCData, DdfTrack, DdfMCTrack, sfTrackIsReconstructible, 
 from ddfUtils import printStatus, getEffWithError
 from ddfRoot import getTEffDict, saveToRoot
 
-from helpers.hists import getHists, createHists, fillHistsRT, prpts_sim_all
+from helpers.hists import getHists, createHists, fillHistsRT, getEffRT, prpts_sim_all
 from helpers.trkSelection import isSelected
 from helpers.misc import getFitEq
 from helpers.mugun import xy_full_range, xy_eff_range, getTrees, getRoundedE
@@ -24,6 +24,8 @@ def main():
     parser.add_argument('-yz', '--yz', type=float, default=20.)
     parser.add_argument('-o', '--fout', type=str, default="")
     parser.add_argument('--remote-eos', type=bool, default=True)
+
+    energies = [10, 12.5, 15, 17.5, 20, 25, 30, 35, 55, 100, 200, 300, 450, 600, 800, 1010]
 
     args = parser.parse_args()
     e = getRoundedE(args.energy)
@@ -68,45 +70,25 @@ def main():
         if not (event.EventHeader.isIP1() and thereIsAMuon(event)):
             continue
 
-        _sf = sfTrackIsReconstructible(event)
-        _ds = dsTrackIsReconstructible(event)
-
-        if _sf==False and _ds==False:
-            continue
-
-        reco = {1: _sf, 11: _sf, 3: _ds, 13: _ds}
-
-        for tt in track_types:
-            if not reco[tt]:
-                continue
-
-            total[tt] += 1
-
-            for trk in event.Reco_MuonTracks:
-                if trk.getTrackType() != tt:
-                    continue
-
+        flag = getEffRT(
+            event = event,
+            h = h,
+            mcSet = "muGun.rt",
+            z_ref = z_ref,
+            weight = 1,
+            track_types = (1, 11, 3, 13),
+            xz_min = xz_min,
+            yz_min = yz_min,
+            xz_max = xz_max,
+            yz_max = yz_max
+        )
+        for tt in (1, 11, 3, 13):
+            if flag["passed"][tt]:
                 passed[tt] += 1
+            if flag["total"][tt]:
+                total[tt] += 1
 
-            for mcTrack in event.MCTrack:
-
-                ddfMCTrack = DdfMCTrack(mcTrack, Event=event, IP1_Angle=20.)
-                if not (
-                    ddfMCTrack.XZ <= xz_max/1e3 and
-                    ddfMCTrack.XZ >= xz_min/1e3 and
-                    ddfMCTrack.YZ <= yz_max/1e3 and
-                    ddfMCTrack.YZ >= yz_min/1e3
-                ): continue
-
-                if not (ddfMCTrack.IsWithinDS3() and ddfMCTrack.IsWithinSF1()):
-                    continue
-
-                flag = fillHistsRT(h, ddfMCTrack, "muGun.rt", z_ref[tt], tt)
-                if flag["passed"]: a[tt]["passed"] += 1
-                if flag["total"]:  a[tt]["total"] += 1
-
-
-    teff = getTEffDict(h, statOption='kfcp', suffix="rt")
+teff = getTEffDict(h, statOption='kfcp', suffix="rt")
     eq = getFitEq(teff, "muGun.rt", track_types)
     saveToRoot(teff, fout=fout, nested=False, print_filename=True)
 

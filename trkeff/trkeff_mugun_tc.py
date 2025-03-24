@@ -4,7 +4,7 @@ from array import array
 from SndlhcGeo import GeoInterface
 from ROOT import TH1F, TFile, TChain, TTree
 
-from sndUtils import SndMCData, DdfTrack, system, algorithm, att
+from sndUtils import SndMCData, DdfTrack, system, algorithm, att, getN
 from ddfUtils import printStatus, getEffWithError
 from ddfRoot import getTEffDict, saveToRoot
 
