@@ -42,7 +42,8 @@ def main():
         fout_name = f"{mfout}/trkeff_Run{run}_tc.root"
 
 
-    geofile = "/eos/experiment/sndlhc/convertedData/physics/2023_reprocess/geofile_sndlhc_TI18_V4v2_2023.root"
+    geofile = "/eos/experiment/sndlhc/convertedData/physics/2023/geofile_sndlhc_TI18_V4_2023.root"
+    #geofile = "/eos/experiment/sndlhc/convertedData/physics/2024/run_2412/geofile_sndlhc_TI18_V12_2024.root"
     data = SndData(Run=run, InputDir="/eos/user/i/idioniso/1_Data/Tracks", Files=files, Geofile=geofile)
     data.InitGeo()
     data.Print()

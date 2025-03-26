@@ -96,7 +96,7 @@ def saveEffsData(
         eff[tt]['eff']    = array('f', [ 0. ])
         eff[tt]['effErr'] = array('f', [ 0. ])
 
-        _eff, _deff_low, _deff_up, _eff_xEdges, _eff_yEdges = getAsNumpy(hist,
+        _eff, _deff, _eff_xEdges, _eff_yEdges = getAsNumpy(hist,
             xmin=xy_eff_range["min"]["x"],
             xmax=xy_eff_range["max"]["x"],
             ymin=xy_eff_range["min"]["y"],
