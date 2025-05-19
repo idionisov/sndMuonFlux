@@ -42,8 +42,8 @@ def main():
         fout_name = f"{mfout}/trkeff_Run{run}_tc.root"
 
 
-    geofile = "/eos/experiment/sndlhc/convertedData/physics/2023/geofile_sndlhc_TI18_V4_2023.root"
-    #geofile = "/eos/experiment/sndlhc/convertedData/physics/2024/run_2412/geofile_sndlhc_TI18_V12_2024.root"
+    #geofile = "/eos/experiment/sndlhc/convertedData/physics/2023/geofile_sndlhc_TI18_V4_2023.root"
+    geofile = "/eos/experiment/sndlhc/convertedData/physics/2024/run_2412/geofile_sndlhc_TI18_V12_2024.root"
     data = SndData(Run=run, InputDir="/eos/user/i/idioniso/1_Data/Tracks", Files=files, Geofile=geofile)
     data.InitGeo()
     data.Print()
@@ -62,15 +62,25 @@ def main():
         if not event.EventHeader.isIP1():
             continue
 
+        eventNum = event.EventHeader.GetEventNumber()
         for tt in track_types:
             for tag_trk in event.Reco_MuonTracks:
-                if tag_trk.getTrackType() != att(tt):
-                    continue
-
-
                 tag_trk = DdfTrack(Track=tag_trk, Event=event, IP1_Angle=0.02)
-                if not tag_trk.IsIP1():
+
+                if not (tag_trk.tt != att(tt) and tag_trk.IsGood(xz_min=-0.02, xz_max=0.02, yz_min=-0.02, yz_max=0.02)):
                     continue
+
+                ref_tag = tag_trk.GetPointAtZ(z_ref[tt])
+                x_tag = ref_tag.X()
+                y_tag = ref_tag.Y()
+
+                if not (
+                    x_tag < -10. and x_tag > -42. and
+                    y_tag <  48. and y_tag > 19.
+                ):
+                    continue
+
+
 
                 if tag_trk.tt==1 or tag_trk.tt==11:
                     if not (

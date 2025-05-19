@@ -160,14 +160,17 @@ def getProbOutAx(
         'ds': {'min': {'x': -42., 'y': 19.}, 'max': {'x': -10., 'y': 48.}}
     },
     zRef: dict = {1: 430., 11: 450., 3: 430., 13: 450.},
+    zRefDistance: float = 3,
     dThetaRMS: float = 0.11,
     ThetaRMS: Union[None, float] = None
 ):
     xi = mcPoint.GetX()
     zi = mcPoint.GetZ()
 
-    xMin = Aref[sys(tt)]["min"]["x"]
-    xMax = Aref[sys(tt)]["max"]["x"]
+    zRefI = getPointAtZ(mcPoint, zRef[tt])
+
+    xMin = zRefI.X() - zRefDistance
+    xMax = zRefI.X() + zRefDistance
 
 
     xz = getXZ(mcPoint)                    # [rad]
@@ -219,14 +222,17 @@ def getProbOutAy(
         'ds': {'min': {'x': -42., 'y': 19.}, 'max': {'x': -10., 'y': 48.}}
     },
     zRef: dict = {1: 430., 11: 450., 3: 430., 13: 450.},
+    zRefDistance: float = 3,
     dThetaRMS: float = 0.11,
     ThetaRMS: Union[None, float] = None
 ):
     yi = mcPoint.GetY()
     zi = mcPoint.GetZ()
 
-    yMin = Aref[sys(tt)]["min"]["y"]
-    yMax = Aref[sys(tt)]["max"]["y"]
+    zRefI = getPointAtZ(mcPoint, zRef[tt])
+
+    yMin = zRefI.Y() - zRefDistance
+    yMax = zRefI.Y() + zRefDistance
 
     xz = getXZ(mcPoint)                    # [rad]
     yz = getYZ(mcPoint)                    # [rad]
@@ -277,14 +283,17 @@ def getProbInAx(
         'ds': {'min': {'x': -42., 'y': 19.}, 'max': {'x': -10., 'y': 48.}}
     },
     zRef: dict = {1: 430., 11: 450., 3: 430., 13: 450.},
+    zRefDistance: float = 3,
     dThetaRMS: float = 0.11,
     ThetaRMS: Union[None, float] = None
 ):
     xi = mcPoint.GetX()
     zi = mcPoint.GetZ()
 
-    xMin = Aref[sys(tt)]["min"]["x"]
-    xMax = Aref[sys(tt)]["max"]["x"]
+    zRefI = getPointAtZ(mcPoint, zRef[tt])
+
+    xMin = zRefI.X() - zRefDistance
+    xMax = zRefI.X() + zRefDistance
 
     xz = getXZ(mcPoint)                    # [rad]
     yz = getYZ(mcPoint)                    # [rad]
@@ -334,14 +343,17 @@ def getProbInAy(
         'ds': {'min': {'x': -42., 'y': 19.}, 'max': {'x': -10., 'y': 48.}}
     },
     zRef: dict = {1: 430., 11: 450., 3: 430., 13: 450.},
+    zRefDistance: float = 3,
     dThetaRMS: float = 0.11,
     ThetaRMS: Union[None, float] = None
 ):
     yi = mcPoint.GetY()
     zi = mcPoint.GetZ()
 
-    yMin = Aref[sys(tt)]["min"]["y"]
-    yMax = Aref[sys(tt)]["max"]["y"]
+    zRefI = getPointAtZ(mcPoint, zRef[tt])
+
+    yMin = zRefI.Y() - zRefDistance
+    yMax = zRefI.Y() + zRefDistance
 
     xz = getXZ(mcPoint)                    # [rad]
     yz = getYZ(mcPoint)                    # [rad]
@@ -388,14 +400,15 @@ def getProbScatter(
         'ds': {'min': {'x': -42., 'y': 19.}, 'max': {'x': -10., 'y': 48.}}
     },
     zRef: dict = {1: 430., 11: 450., 3: 430., 13: 450.},
+    zRefDistance: float = 3,
     dThetaRMS: float = 0.11,
     ThetaRMS: Union[None, float] = None
 ):
 
-    p_out_Ax, e_p_out_Ax = getProbOutAx(mcPoint, tt, Aref, zRef)
-    p_out_Ay, e_p_out_Ay = getProbOutAy(mcPoint, tt, Aref, zRef)
-    p_in_Ax,  e_p_in_Ax  = getProbInAx(mcPoint,  tt, Aref, zRef)
-    p_in_Ay,  e_p_in_Ay  = getProbInAy(mcPoint,  tt, Aref, zRef)
+    p_out_Ax, e_p_out_Ax = getProbOutAx(mcPoint, tt, Aref, zRef, zRefDistance)
+    p_out_Ay, e_p_out_Ay = getProbOutAy(mcPoint, tt, Aref, zRef, zRefDistance)
+    p_in_Ax,  e_p_in_Ax  = getProbInAx(mcPoint,  tt, Aref, zRef, zRefDistance)
+    p_in_Ay,  e_p_in_Ay  = getProbInAy(mcPoint,  tt, Aref, zRef, zRefDistance)
 
     p_out = p_out_Ax + p_out_Ay - p_out_Ax*p_out_Ay
     e_p_out = np.sqrt(  (e_p_out_Ax + p_out_Ay*e_p_out_Ax)**2 + (e_p_out_Ay + p_out_Ax*e_p_out_Ay)**2  )

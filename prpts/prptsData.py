@@ -75,15 +75,15 @@ def main():
             yz = 1e3*trk.YZ
             chi2 = trk.Chi2
             chi2ndf = trk.Chi2Ndf
-            trkP = trk.getPoints().size()
+            trkP = trk.sndRecoTrack.getTrackPoints().size()
             n = getN(tt, event=event)
 
             h[tt]["x"].Fill(x)
             h[tt]["y"].Fill(y)
-            h[tt]["xy"].Fill(x, y)
+            h[tt]["x.y"].Fill(x, y)
             h[tt]["xz"].Fill(xz)
             h[tt]["yz"].Fill(yz)
-            h[tt]["xzyz"].Fill(xz, yz)
+            h[tt]["xz.yz"].Fill(xz, yz)
             h[tt]["n"].Fill(n)
             h[tt]["trkP"].Fill(trkP)
             h[tt]["chi2"].Fill(chi2)

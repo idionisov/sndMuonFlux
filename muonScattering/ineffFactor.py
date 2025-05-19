@@ -118,8 +118,8 @@ def main():
             #    "e": {tt: get_p_in_Ax(mcPoint, tt, A, zRef, 0.11, theta_rms)[1] for tt in (3, 13)}
             #}
             p_scat = {
-                "v": {tt: getProbScatter(mcPoint, tt, A, zRef, 0.11)[0] for tt in (3, 13)},
-                "e": {tt: getProbScatter(mcPoint, tt, A, zRef, 0.11)[1] for tt in (3, 13)}
+                "v": {tt: getProbScatter(mcPoint, tt, A, zRef, 3, 0.11)[0] for tt in (3, 13)},
+                "e": {tt: getProbScatter(mcPoint, tt, A, zRef, 3, 0.11)[1] for tt in (3, 13)}
             }
             for tt in (3, 13):
                 N_scat["v"][tt] += w*(1-p_scat["v"][tt])
