@@ -1,0 +1,1 @@
+python -i ${SND_HOME}/sndsw/shipLHC/scripts/2dEventDisplay.py     -g /eos/experiment/sndlhc/convertedData/physics/2024/run_2412/geofile_sndlhc_TI18_V12_2024.root     -f /eos/experiment/sndlhc/convertedData/physics/2024/run_2412/run_010337/sndsw_raw-0010.root     -X True     -hf linearSlopeIntercept     -p ""
