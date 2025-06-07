@@ -146,9 +146,10 @@ def fillHistsTC(
     weight:       Union[int, float] = 1,
 ) -> dict:
     result = {"total": False, "passed": False}
-    if tt != tag_trk.att():
-        return result
-
+    ##if tag_trk.tt != att(tt):
+    #    print(f"      NO! {tt}/{tag_trk.tt} \t {tag_trk.att()}|{att(tag_trk.tt)}")
+    #    return result
+    #else:
     event = tag_trk.Event
 
     ref_tag = tag_trk.GetPointAtZ(z_ref)
@@ -217,13 +218,15 @@ def fillHistsTC(
         result["total"] = True
 
     for trk2 in event.Reco_MuonTracks:
-        trk2 = DdfTrack(Track=trk2, Event=event, IP1_Angle=ip1_angle)
+        trk2 = DdfTrack(Track=trk2, Event=event, IP1_Angle=0.08)
 
         if not (
             trk2.tt==tt and
             trk2.IsIP1()
-            # abs(tag_trk.XZ-trk2.XZ) <= 0.02 and
-            # abs(tag_trk.YZ-trk2.YZ) <= 0.02
+            #abs(trk2.XZ) <= 0.02 and
+            #abs(trk2.YZ) <= 0.02
+            #abs(tag_trk.XZ-trk2.XZ) <= 0.02 and
+            #abs(tag_trk.YZ-trk2.YZ) <= 0.02
         ): continue
 
         xz_cand = 1e3*trk2.XZ

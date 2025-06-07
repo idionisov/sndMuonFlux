@@ -18,7 +18,8 @@ parser.add_argument('-g', '--geofile', type=str, default="/eos/experiment/sndlhc
 args = parser.parse_args()
 
 zRef = {1: args.z_ref[0], 11: args.z_ref[1], 3: args.z_ref[2], 13: args.z_ref[3]}
-runs = args.runs
+runs = [run for run in args.runs if getSubDirPath(RootDir="/eos/user/i/idioniso/1_Data/Tracks/", TopDir=f"run_{run:06d}")]
+
 trackTypes=(1, 11, 3, 13)
 files = args.files
 geo = args.geofile
@@ -48,14 +49,15 @@ if len(runs)==1:
 if not files.endswith(".root"):
     files = f"{files}.root"
 
-data = {
-    run: SndData(
+data = {}
+for run in runs:
+    data[run] = SndData(
         Run=run,
         InputDir="/eos/user/i/idioniso/1_Data/Tracks/",
         Files=files,
         Geofile=geo
-    ) for run in runs
-}
+    )
+print(data)
 
 
 
@@ -79,6 +81,10 @@ trackTypes = (1, 11, 3, 13)
 
 trkPairs = {}
 for run in runs:
+    if run not in data.keys():
+        print(f"Skipping run {run}")
+        continue
+
     data[run].InitGeo()
     nEntries = data[run].Tree.GetEntries()
 
@@ -90,21 +96,21 @@ for run in runs:
             continue
 
         for tt in (1, 11, 3, 13):
+            flag = False
             built = False
             paired = False
-            cand20mrad = False
+            lt20mrad = False
 
             for trk0 in event.Reco_MuonTracks:
+                trk0 = DdfTrack(Track=trk0, Event=event, IP1_Angle=0.02)
                 if not (
-                    trk0.getTrackType() == att(tt) and
-                    trk0.getTrackMom().Z() > 0 and
-                    abs(trk0.getAngleXZ()) <= 0.02 and
-                    abs(trk0.getAngleYZ()) <= 0.02
+                    trk0.tt == att(tt) and
+                    trk0.Mom.Z() > 0 and
+                    abs(trk0.XZ) <= 0.08 and
+                    abs(trk0.YZ) <= 0.08
                 ):
                     continue
                 else:
-                    trk0 = DdfTrack(Track=trk0, Event=event, IP1_Angle=0.02)
-
                     if trk0.tt==1 or trk0.tt==11:
                         if not (
                             trk0.IsWithinUS5Bar(data[run].Mufi, event.Digi_MuFilterHits) and
@@ -124,7 +130,10 @@ for run in runs:
 
                 if not (
                     x0 > -42. and x0 < -10. and y0 > 19. and y0 < 48.
-                ): continue
+                ):
+                    continue
+
+                flag = True
 
                 N = getN(tt, event)
                 if tt in (1, 11):
@@ -132,23 +141,13 @@ for run in runs:
                 else:
                     nMaxPlane = ineffUtils.getMaxDsHitsPerPlane(event)
 
-                h["x.y"][tt]["all"].Fill(x0, y0)
-                h["n"][tt]["all"].Fill(N)
-                h["maxH"][tt]["all"].Fill(nMaxPlane)
-                counts["all"][tt] += 1
 
+                counts["all"][tt] += 1
 
                 if not ineffUtils.oppositeTrackExists(trk0, event):
                     built = False
                     paired = False
-                    cand20mrad = False
-
-                    h["x.y"][tt]["notBuilt"].Fill(x0, y0)
-                    h["x.y"][tt]["ineff"].Fill(x0, y0)
-                    h["n"][tt]["notBuilt"].Fill(N)
-                    h["n"][tt]["ineff"].Fill(N)
-                    h["maxH"][tt]["notBuilt"].Fill(nMaxPlane)
-                    h["maxH"][tt]["notPaired"].Fill(nMaxPlane)
+                    lt20mrad = False
 
                     counts["ineff"][tt] += 1
                     counts["notBuilt"][tt] += 1
@@ -156,18 +155,16 @@ for run in runs:
                 else:
                     built = True
                     paired = False
-                    cand20mrad = False
-
+                    lt20mrad = False
 
                 for trk1 in event.Reco_MuonTracks:
                     if not (
                         trk1.getTrackType() == tt and
                         trk1.getTrackMom().Z() > 0 and
-                        abs(trk1.getAngleXZ()) <= 0.02 and
-                        abs(trk1.getAngleYZ()) <= 0.02
+                        abs(trk1.getAngleXZ()) <= 0.08 and
+                        abs(trk1.getAngleYZ()) <= 0.08
                     ):
-                        paired = False
-                        cand20mrad = False
+                        continue
 
                     else:
                         trk1 = DdfTrack(
@@ -179,39 +176,79 @@ for run in runs:
 
                         if ineffUtils.tracksArePaired(trk0, trk1, zRef, tt):
                             paired = True
+
                             if abs(trk1.XZ) <= 0.02 and abs(trk1.YZ) <= 0.02:
-                                cand20mrad = True
+                                lt20mrad = True
                             else:
-                                cand20mrad = False
+                                lt20mrad = False
+                            break
+
                         else:
                             paired = False
-                            cand20mrad = False
+                            lt20mrad = False
 
                 if not paired:
-                    h["x.y"][tt]["notPaired"].Fill(x0, y0)
-                    h["x.y"][tt]["ineff"].Fill(x0, y0)
-                    h["n"][tt]["notPaired"].Fill(N)
-                    h["n"][tt]["ineff"].Fill(N)
-                    h["maxH"][tt]["notPaired"].Fill(nMaxPlane)
-                    h["maxH"][tt]["ineff"].Fill(nMaxPlane)
-
                     counts["ineff"][tt] += 1
                     counts["notPaired"][tt] += 1
+
                 else:
-                    h["x.y"][tt]["eff"].Fill(x0, y0)
-                    h["n"][tt]["eff"].Fill(N)
-                    h["maxH"][tt]["eff"].Fill(nMaxPlane)
+                    if lt20mrad:
+                        counts["eff"][tt] += 1
+                    else:
+                        counts["cand>20mrad"][tt] += 1
 
-                    if cand20mrad:
-                        h["x.y"][tt]["cand>20mrad"].Fill(x0, y0)
-                        h["n"][tt]["cand>20mrad"].Fill(N)
-                        h["maxH"][tt]["cand>20mrad"].Fill(nMaxPlane)
+            if not flag:
+                continue
 
-                    counts["eff"][tt] += 1
             ineffEvents["run"].append(run)
             ineffEvents["eventNum"].append(eventNumber)
             ineffEvents["tt"].append(tt)
 
+            h["x.y"][tt]["all"].Fill(x0, y0)
+            h["n"][tt]["all"].Fill(N)
+            h["maxH"][tt]["all"].Fill(nMaxPlane)
+
+            if not built:
+                ineffEvents["built"].append(False)
+                ineffEvents["paired"].append(False)
+                ineffEvents["cand>20mrad"].append(False)
+
+                h["x.y"][tt]["ineff"].Fill(x0, y0)
+                h["n"][tt]["ineff"].Fill(N)
+                h["maxH"][tt]["ineff"].Fill(nMaxPlane)
+
+                h["x.y"][tt]["notBuilt"].Fill(x0, y0)
+                h["n"][tt]["notBuilt"].Fill(N)
+                h["maxH"][tt]["notBuilt"].Fill(nMaxPlane)
+            else:
+                ineffEvents["built"].append(False)
+            
+                if paired:
+                    ineffEvents["paired"].append(True)
+
+                    h["x.y"][tt]["eff"].Fill(x0, y0)
+                    h["n"][tt]["eff"].Fill(N)
+                    h["maxH"][tt]["eff"].Fill(nMaxPlane)
+
+                    if lt20mrad:
+                        ineffEvents["cand>20mrad"].append(False)
+                    else:
+                        ineffEvents["cand>20mrad"].append(True)
+
+                        h["x.y"][tt]["cand>20mrad"].Fill(x0, y0)
+                        h["n"][tt]["cand>20mrad"].Fill(N)
+                        h["maxH"][tt]["cand>20mrad"].Fill(nMaxPlane)
+                else:
+                    ineffEvents["paired"].append(False)
+                    ineffEvents["cand>20mrad"].append(False)
+
+                    h["x.y"][tt]["ineff"].Fill(x0, y0)
+                    h["n"][tt]["ineff"].Fill(N)
+                    h["maxH"][tt]["ineff"].Fill(nMaxPlane)
+
+                    h["x.y"][tt]["notPaired"].Fill(x0, y0)
+                    h["n"][tt]["notPaired"].Fill(N)
+                    h["maxH"][tt]["notPaired"].Fill(nMaxPlane)
 
 ineffEvents = pd.DataFrame(ineffEvents)
 

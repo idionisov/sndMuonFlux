@@ -28,8 +28,8 @@ def main():
     parser.add_argument('-i', '--input-dir', type=str, default='')
     parser.add_argument('-o', '--fout', type=str, default='')
     parser.add_argument('-z', '--z-ref', nargs="+", type=float, default=[450., 430., 450., 430.])
-    parser.add_argument('-xz', '--xz', type=float, default=20.)
-    parser.add_argument('-yz', '--yz', type=float, default=20.)
+    parser.add_argument('-xz', '--xz', type=float, default=80.)
+    parser.add_argument('-yz', '--yz', type=float, default=80.)
     parser.add_argument('--remote-eos', type=bool, default=True)
     parser.add_argument('--scale', type=int, default=1)
 
@@ -68,7 +68,7 @@ def main():
         for i_trk, trk in enumerate(event.Reco_MuonTracks):
             if trk.getTrackMom().Z()==0:
                 continue
-            trk = DdfTrack(Track=trk, Event=event)
+            trk = DdfTrack(Track=trk, Event=event, IP1_Angle=xz_max)
 
             if not trk.IsWithinAref(
                 Zref=z_ref[trk.tt],
@@ -84,7 +84,13 @@ def main():
 
             nTracks['all'][tt] += 1
 
-            if trk.IsIP1():
+            if (
+                trk.IsIP1() and
+                trk.XZ >= xz_min/1e3 and
+                trk.XZ <= xz_max/1e3 and
+                trk.YZ >= yz_min/1e3 and
+                trk.YZ <= yz_max/1e3
+            ):
                 nTracks['IP1'][tt] += 1
 
 

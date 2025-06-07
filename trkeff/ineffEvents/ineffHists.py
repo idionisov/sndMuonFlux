@@ -13,7 +13,7 @@ def getIneffNHists(runOrMC = 7080, TTs = (1, 11, 3, 13)):
         else:        n_min = 5; n_max = 125; nbins_n = 120
 
         h[tt] = {}
-        for rsn in ("all", "eff", "ineff", "notBuilt", "notPaired", "cand<20mrad"):
+        for rsn in ("all", "eff", "ineff", "notBuilt", "notPaired", "cand>20mrad"):
             h[tt][rsn] = ROOT.TH1F(
                 f"h_ineff_n_{tt}_{runOrMC}_{rsn}",
                 f";# {nName(tt)};",
@@ -27,7 +27,7 @@ def getIneffXYHists(runOrMC = 7080, TTs = (1, 11, 3, 13)):
     for tt in TTs:
         h[tt] = {}
 
-        for rsn in ("all", "eff", "ineff", "notBuilt", "notPaired", "cand<20mrad"):
+        for rsn in ("all", "eff", "ineff", "notBuilt", "notPaired", "cand>20mrad"):
             h[tt][rsn] = ROOT.TH2F(
                 f"h_ineff_x.y_{tt}_{runOrMC}_{rsn}",
                 f";X_{{ref}} (cm);Y_{{ref}} (cm);",
@@ -46,7 +46,7 @@ def getIneffMaxPlaneHitsHists(runOrMC = 7080, TTs = (1, 11, 3, 13)):
         else:        n_min = 0; n_max = 20; nbins_n = 40
 
         h[tt] = {}
-        for rsn in ("all", "eff", "ineff", "notBuilt", "notPaired", "cand<20mrad"):
+        for rsn in ("all", "eff", "ineff", "notBuilt", "notPaired", "cand>20mrad"):
             h[tt][rsn] = ROOT.TH1F(
                 f"h_ineff_maxHits_{tt}_{runOrMC}_{rsn}",
                 f";# {nName(tt)};",
