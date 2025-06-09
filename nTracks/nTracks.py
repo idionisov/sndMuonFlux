@@ -48,7 +48,11 @@ def main():
     yz_min = -abs(args.yz)
     yz_max =  abs(args.yz)
 
-    data = SndData(Run=run, InputDir=input, Files=args.files)
+    if run!=8329:
+        data = SndData(Run=run, InputDir=input, Files=args.files)
+    else:
+        data = SndData(Run=run, InputDir="/eos/experiment/sndlhc/users/sii/2024", TopDir=str(run), Files=args.files)
+        
     data.Print()
 
     start_time = time()

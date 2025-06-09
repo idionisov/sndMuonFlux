@@ -46,7 +46,11 @@ def main():
 
 
     geofile = args.geofile
-    data = SndData(Run=run, InputDir=input_dir, Files=files, Geofile=geofile)
+    if run!=8329:
+        data = SndData(Run=run, InputDir=input_dir, Files=files, Geofile=geofile)
+    else:
+        data = SndData(Run=run, InputDir="/eos/experiment/sndlhc/users/sii/2024", TopDir=str(run), Files=files, Geofile=geofile)
+
     data.InitGeo()
     data.Print()
 
@@ -70,9 +74,11 @@ def main():
                 tag_trk = DdfTrack(Track=tag_trk, Event=event, IP1_Angle=xz_max)
 
                 if not (
-                    tag_trk.tt != att(tt) and tag_trk.IsGood(xz_min=xz_min/1e3, xz_max=xz_max/1e3, yz_min=yz_min/1e3, yz_max=yz_max/1e3)
+                    tag_trk.tt == att(tt) and 
+                    tag_trk.IsGood(xz_min=xz_min/1e3, xz_max=xz_max/1e3, yz_min=yz_min/1e3, yz_max=yz_max/1e3)
                 ):
                     continue
+
                 ref_tag = tag_trk.GetPointAtZ(z_ref[tt])
                 x_tag = ref_tag.X()
                 y_tag = ref_tag.Y()
@@ -98,7 +104,7 @@ def main():
 
                 else: continue
 
-                flags = fillHistsTC(h, tag_trk, run, z_ref[tt], tt)
+                flags = fillHistsTC(h, tag_trk, run, z_ref[tt], tt, chi2ndf=chi2ndf)
 
 
 

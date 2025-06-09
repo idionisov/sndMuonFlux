@@ -143,6 +143,7 @@ def fillHistsTC(
     z_ref:        float = 450.,
     tt:           int = 1,
     ip1_angle:    float = 0.02,
+    chi2ndf:      dict = {1: 1e9, 11: 1e9, 3: 1e9, 13: 1e9},
     weight:       Union[int, float] = 1,
 ) -> dict:
     result = {"total": False, "passed": False}
@@ -223,8 +224,9 @@ def fillHistsTC(
         if not (
             trk2.tt==tt and
             trk2.IsIP1()
-            #abs(trk2.XZ) <= 0.02 and
-            #abs(trk2.YZ) <= 0.02
+            #trk2.Chi2Ndf <= chi2ndf[tt]
+            #abs(trk2.XZ) <= 0.08 and
+            #abs(trk2.YZ) <= 0.08
             #abs(tag_trk.XZ-trk2.XZ) <= 0.02 and
             #abs(tag_trk.YZ-trk2.YZ) <= 0.02
         ): continue
