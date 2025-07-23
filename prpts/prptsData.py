@@ -6,7 +6,7 @@ from time import time
 from ddfRoot import saveToRoot
 from sndUtils import getN, DdfTrack, SndData
 from ddfUtils import printStatus
-from helpers.hists import get_h_xz, get_h_yz, get_h_xzyz, get_h_x, get_h_y, get_h_xy, get_h_n, get_h_trkP, get_h_chi2, get_h_chi2ndf, get_h, prpts_all
+from helpers.hists import get_h_xz, get_h_yz, get_h_xzyz, get_h_x, get_h_y, get_h_xy, get_h_n, get_h_trkP, get_h_chi2, get_h_chi2ndf, get_h, prpts_all, get_h_xz_chi2ndf
 
 
 
@@ -41,7 +41,10 @@ def main():
     else:
         fout_name = args.fout
 
-    data = SndData(Run=run, InputDir=input_dir, Files=files)
+    if run != 8329:
+        data = SndData(Run=run, InputDir=input_dir, Files=files)
+    else:
+        data = SndData(Run=run, InputDir="/eos/experiment/sndlhc/users/sii/2024", TopDir=str(run), Files=files)
     data.Print()
 
     cbmsim = data.Tree
@@ -63,7 +66,7 @@ def main():
         count = printStatus(i_event, nevents, start_time, count)
 
         for i_trk, trk in enumerate(event.Reco_MuonTracks):
-            if trk.getTrackMom().Z()==0:
+            if trk.getTrackMom().Z()==0 or trk.getTrackFlag()==False:
                 continue
 
             trk = DdfTrack(Track=trk, Event=event)
@@ -77,11 +80,22 @@ def main():
             chi2ndf = trk.Chi2Ndf
             trkP = trk.sndRecoTrack.getTrackPoints().size()
             n = getN(tt, event=event)
+            res = trk.GetMeanRes()
 
             h[tt]["x"].Fill(x)
             h[tt]["y"].Fill(y)
             h[tt]["x.y"].Fill(x, y)
             h[tt]["xz"].Fill(xz)
+            h[tt]["xz.chi2ndf"].Fill(xz, chi2ndf)
+            h[tt]["xz.chi2ndf:pr"].Fill(xz, chi2ndf)
+            h[tt]["xz.res"].Fill(xz, res)
+            h[tt]["xz.res:pr"].Fill(xz, res)
+            h[tt]["yz.res"].Fill(yz, res)
+            h[tt]["yz.res:pr"].Fill(yz, res)
+            h[tt]["x.res"].Fill(x, res)
+            h[tt]["y.res"].Fill(y, res)
+            h[tt]["x.res:pr"].Fill(x, res)
+            h[tt]["y.res:pr"].Fill(y, res)
             h[tt]["yz"].Fill(yz)
             h[tt]["xz.yz"].Fill(xz, yz)
             h[tt]["n"].Fill(n)

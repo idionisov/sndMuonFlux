@@ -219,17 +219,20 @@ def fillHistsTC(
         result["total"] = True
 
     for trk2 in event.Reco_MuonTracks:
-        trk2 = DdfTrack(Track=trk2, Event=event, IP1_Angle=0.08)
+        trk2 = DdfTrack(Track=trk2, Event=event, IP1_Angle=1e9)
 
         if not (
             trk2.tt==tt and
-            trk2.IsIP1()
+            trk2.IsIP1() and
             #trk2.Chi2Ndf <= chi2ndf[tt]
-            #abs(trk2.XZ) <= 0.08 and
-            #abs(trk2.YZ) <= 0.08
+            trk2.XZ <=  0.08 and
+            trk2.XZ >= -0.08 and
+            trk2.YZ <=  0.08 and
+            trk2.YZ >= -0.08
             #abs(tag_trk.XZ-trk2.XZ) <= 0.02 and
             #abs(tag_trk.YZ-trk2.YZ) <= 0.02
         ): continue
+
 
         xz_cand = 1e3*trk2.XZ
         yz_cand = 1e3*trk2.YZ

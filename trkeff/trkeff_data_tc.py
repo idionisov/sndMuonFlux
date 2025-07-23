@@ -20,8 +20,12 @@ def main():
     parser.add_argument('-f', '--files', type=str, default='*f10*.root')
     parser.add_argument('-i', '--input-dir', type=str, default='/eos/user/i/idioniso/1_Data/Tracks')
     parser.add_argument('-z', '--z_ref', nargs="+", type=float, default=[430., 450., 430., 450.])
-    parser.add_argument('-xz', '--xz', type=float, default=20.)
-    parser.add_argument('-yz', '--yz', type=float, default=20.)
+    parser.add_argument('-xz', '--xz', type=float, default=80.)
+    parser.add_argument('-yz', '--yz', type=float, default=80.)
+    parser.add_argument('--xz-min', type=float, default=0.)
+    parser.add_argument('--xz-max', type=float, default=0.)
+    parser.add_argument('--yz-min', type=float, default=0.)
+    parser.add_argument('--yz-max', type=float, default=0.)
     parser.add_argument('-o', '--fout', type=str, default="")
     parser.add_argument('--chi2ndf', nargs="+", type=float, default=[1e6, 1e6, 1e6, 1e6])
     parser.add_argument('--geofile', type=str, default="/eos/experiment/sndlhc/convertedData/physics/2023/geofile_sndlhc_TI18_V4_2023.root")
@@ -33,10 +37,31 @@ def main():
     files = args.files
     z_ref = {1: args.z_ref[0], 11: args.z_ref[1], 3: args.z_ref[2], 13: args.z_ref[3]}
     chi2ndf = {1: args.chi2ndf[0], 11: args.chi2ndf[1], 3: args.chi2ndf[2], 13: args.chi2ndf[3]}
-    xz_min = -abs(args.xz)
-    xz_max =  abs(args.xz)
-    yz_min = -abs(args.yz)
-    yz_max =  abs(args.yz)
+
+    if args.xz_min:
+        xz_min = -abs(args.xz_min)
+    else:
+        xz_min = -abs(args.xz)
+
+    if args.xz_max:
+        xz_max = abs(args.xz_max)
+    else:
+        xz_max = abs(args.xz)
+
+    if args.yz_min:
+        yz_min = -abs(args.yz_min)
+    else:
+        yz_min = -abs(args.yz)
+    
+    if args.yz_max:
+        yz_max = abs(args.yz_max)
+    else:
+        yz_max = abs(args.yz)
+
+    print(f"XZ max: {xz_max}")
+    print(f"XZ min: {xz_min}")
+    print(f"YZ max: {yz_max}")
+    print(f"YZ min: {yz_min}")
 
     mfout = "/eos/user/i/idioniso/mfout"
     if args.fout:
@@ -47,7 +72,7 @@ def main():
 
     geofile = args.geofile
     if run!=8329:
-        data = SndData(Run=run, InputDir=input_dir, Files=files, Geofile=geofile)
+        data = SndData(Run=run, InputDir=input_dir, TopDir=f"run_{run:06d}_legacy", Files=files, Geofile=geofile)
     else:
         data = SndData(Run=run, InputDir="/eos/experiment/sndlhc/users/sii/2024", TopDir=str(run), Files=files, Geofile=geofile)
 
