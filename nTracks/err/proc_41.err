@@ -1,0 +1,12 @@
+WARNING: not updating modulefiles
+ERROR: sndsw/latest was not found
+Traceback (most recent call last):
+  File "/afs/cern.ch/work/i/idioniso/sndMuonFlux/nTracks/nTracks.py", line 9, in <module>
+    from sndUtils import SndData, DdfTrack
+  File "/cvmfs/sndlhc.cern.ch/SNDLHC-2025/Jan30/sw/slc9_x86-64/ROOT/v6-28-12-local1/lib/ROOT/_facade.py", line 154, in _importhook
+    return _orig_ihook(name, *args, **kwds)
+  File "/afs/cern.ch/user/i/idioniso/snd_master/ddf/sndUtils.py", line 8, in <module>
+    from SndlhcGeo import GeoInterface
+  File "/cvmfs/sndlhc.cern.ch/SNDLHC-2025/Jan30/sw/slc9_x86-64/ROOT/v6-28-12-local1/lib/ROOT/_facade.py", line 154, in _importhook
+    return _orig_ihook(name, *args, **kwds)
+ModuleNotFoundError: No module named 'SndlhcGeo'

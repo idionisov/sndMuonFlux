@@ -1,0 +1,97 @@
+000 (5770884.112.000) 07/22 11:51:17 Job submitted from host: <188.185.125.71:9618?addrs=188.185.125.71-9618+[2001-1458-d00-4a--100-15e]-9618&alias=bigbird28.cern.ch&noUDP&sock=schedd_2239_58a3>
+...
+040 (5770884.112.000) 07/22 11:52:10 Started transferring input files
+	Transferring to host: <188.185.198.52:9618?addrs=188.185.198.52-9618+[2001-1458-303-25--100-30]-9618&alias=b9p15p4085.cern.ch&noUDP&sock=slot1_15_9089_c5cb_59300>
+...
+040 (5770884.112.000) 07/22 11:52:10 Finished transferring input files
+...
+001 (5770884.112.000) 07/22 11:52:11 Job executing on host: <188.185.198.52:9618?addrs=188.185.198.52-9618+[2001-1458-303-25--100-30]-9618&alias=b9p15p4085.cern.ch&noUDP&sock=startd_8106_9ec8>
+	SlotName: slot1_15@b9p15p4085.cern.ch
+	CondorScratchDir = "/pool/condor/dir_199465"
+	Cpus = 1
+	Disk = 3791
+	GPUs = 0
+	Memory = 3000
+...
+006 (5770884.112.000) 07/22 11:52:24 Image size of job updated: 17480
+	18  -  MemoryUsage of job (MB)
+	17480  -  ResidentSetSize of job (KB)
+...
+006 (5770884.112.000) 07/22 11:57:24 Image size of job updated: 182352
+	179  -  MemoryUsage of job (MB)
+	182352  -  ResidentSetSize of job (KB)
+...
+006 (5770884.112.000) 07/22 12:02:25 Image size of job updated: 514388
+	442  -  MemoryUsage of job (MB)
+	452020  -  ResidentSetSize of job (KB)
+...
+006 (5770884.112.000) 07/22 12:07:25 Image size of job updated: 1032296
+	963  -  MemoryUsage of job (MB)
+	985864  -  ResidentSetSize of job (KB)
+...
+006 (5770884.112.000) 07/22 12:12:25 Image size of job updated: 1032296
+	965  -  MemoryUsage of job (MB)
+	987144  -  ResidentSetSize of job (KB)
+...
+006 (5770884.112.000) 07/22 12:17:26 Image size of job updated: 1032296
+	968  -  MemoryUsage of job (MB)
+	990416  -  ResidentSetSize of job (KB)
+...
+006 (5770884.112.000) 07/22 12:27:26 Image size of job updated: 1032296
+	973  -  MemoryUsage of job (MB)
+	995688  -  ResidentSetSize of job (KB)
+...
+006 (5770884.112.000) 07/22 12:32:27 Image size of job updated: 1034352
+	995  -  MemoryUsage of job (MB)
+	1018064  -  ResidentSetSize of job (KB)
+...
+006 (5770884.112.000) 07/22 12:37:27 Image size of job updated: 1067496
+	995  -  MemoryUsage of job (MB)
+	1018064  -  ResidentSetSize of job (KB)
+...
+006 (5770884.112.000) 07/22 12:42:27 Image size of job updated: 1068200
+	1033  -  MemoryUsage of job (MB)
+	1057276  -  ResidentSetSize of job (KB)
+...
+006 (5770884.112.000) 07/22 12:47:28 Image size of job updated: 1070388
+	1033  -  MemoryUsage of job (MB)
+	1057276  -  ResidentSetSize of job (KB)
+...
+006 (5770884.112.000) 07/22 12:52:28 Image size of job updated: 1075900
+	1035  -  MemoryUsage of job (MB)
+	1058904  -  ResidentSetSize of job (KB)
+...
+006 (5770884.112.000) 07/22 12:57:28 Image size of job updated: 1075900
+	1048  -  MemoryUsage of job (MB)
+	1072492  -  ResidentSetSize of job (KB)
+...
+006 (5770884.112.000) 07/22 13:22:31 Image size of job updated: 1101348
+	1048  -  MemoryUsage of job (MB)
+	1072492  -  ResidentSetSize of job (KB)
+...
+006 (5770884.112.000) 07/22 13:27:32 Image size of job updated: 1110880
+	1061  -  MemoryUsage of job (MB)
+	1086420  -  ResidentSetSize of job (KB)
+...
+040 (5770884.112.000) 07/22 13:30:16 Started transferring output files
+...
+040 (5770884.112.000) 07/22 13:30:16 Finished transferring output files
+...
+005 (5770884.112.000) 07/22 13:30:16 Job terminated.
+	(1) Normal termination (return value 0)
+		Usr 0 01:19:47, Sys 0 00:01:26  -  Run Remote Usage
+		Usr 0 00:00:00, Sys 0 00:00:00  -  Run Local Usage
+		Usr 0 01:19:47, Sys 0 00:01:26  -  Total Remote Usage
+		Usr 0 00:00:00, Sys 0 00:00:00  -  Total Local Usage
+	563207  -  Run Bytes Sent By Job
+	1666  -  Run Bytes Received By Job
+	563207  -  Total Bytes Sent By Job
+	1666  -  Total Bytes Received By Job
+	Partitionable Resources :    Usage  Request Allocated 
+	   Cpus                 :     0.85        1         1 
+	   Disk (KB)            :   574           2      3791 
+	   GPUs                 :                           0 
+	   Memory (MB)          :  1061        3000      3000 
+
+	Job terminated of its own accord at 2025-07-22T11:30:16Z with exit-code 0.
+...

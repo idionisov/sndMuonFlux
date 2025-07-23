@@ -1,0 +1,15 @@
+executable            = nTracks.sh
+
+output                = out/proc_$(ProcId).out
+error                 = err/proc_$(ProcId).err
+log                   = log/proc_$(ProcId).log
+
+getenv                = False
+notification          = Never
+requirements          = (OpSysAndVer =?= "AlmaLinux9")
+should_transfer_files = IF_NEEDED
+
++JobFlavour           = "workday"
++AccountingGroup      = "group_u_SNDLHC.users"
+
+queue arguments from args.txt

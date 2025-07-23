@@ -1,0 +1,6 @@
+Output: /eos/user/i/idioniso/mfout/nTracks/var-meanRes/nTracks10241.4.25_1e+12mrad.csv
+ ~ 1) Checking if sndsw is sourced ... Sourcing sndsw ... SNDSW has been sourced!
+ ~ 2) Loading sndsw enviornment ...
+ ~ 3) SNDSW_ROOT: /cvmfs/sndlhc.cern.ch/SNDLHC-2025/Jan30//sw//slc9_x86-64/sndsw/master-local1
+ ~ 4) Running the nTracks.py script ... 
+ ~ 5) DONE !
