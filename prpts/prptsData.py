@@ -41,7 +41,10 @@ def main():
     else:
         fout_name = args.fout
 
-    data = SndData(Run=run, InputDir=input_dir, Files=files)
+    if run!=8329:
+        data = SndData(Run=run, InputDir=input_dir, Files=files)
+    else:
+        data = SndData(Run=run, InputDir="/eos/experiment/sndlhc/users/sii/2024", TopDir=str(run), Files=files)
     data.Print()
 
     cbmsim = data.Tree

@@ -219,7 +219,7 @@ def fillHistsTC(
         result["total"] = True
 
     for trk2 in event.Reco_MuonTracks:
-        trk2 = DdfTrack(Track=trk2, Event=event, IP1_Angle=0.08)
+        trk2 = DdfTrack(Track=trk2, Event=event, IP1_Angle=1e9)
 
         if not (
             trk2.tt==tt and
@@ -305,7 +305,7 @@ def fillHistsRT(
     mcSet:        str,
     z_ref:        float = 450.,
     tt:           int = 1,
-    ip1_angle:    float = 20.,
+    ip1_angle:    float = 80.,
     weight:       Union[int, float] = 1
 ):
     if not flag["total"][tt]:
@@ -357,7 +357,7 @@ def fillHistsRT(
         if "yz.n"       in prpts: h[tt]['yz.n'][1].Fill(yz_tag, n, weight)
 
     for trk2 in event.Reco_MuonTracks:
-        trk2 = DdfTrack(Track=trk2, Event=event, IP1_Angle=ip1_angle)
+        trk2 = DdfTrack(Track=trk2, Event=event, IP1_Angle=0.08)
 
         if not (
             trk2.tt==tt and
@@ -416,14 +416,14 @@ def getEffRT(
     event:        ROOT.TChain,
     h:            dict,
     mcSet:        str,
-    z_ref:        dict = {1: 430., 11: 450, 3: 430., 13: 450},
+    z_ref:        dict = {1: 430., 11: 430, 3: 450., 13: 450},
     ip1_angle:    float = 20.,
     weight:       Union[int, float] = 1,
     track_types:  tuple = (1, 11, 3, 13),
-    xz_min:       float = -20.,
-    yz_min:       float = -20.,
-    xz_max:       float =  20.,
-    yz_max:       float =  20.,
+    xz_min:       float = -80.,
+    yz_min:       float = -80.,
+    xz_max:       float =  80.,
+    yz_max:       float =  80.,
 ):
     _sf = sfTrackIsReconstructible(event)
     _ds = dsTrackIsReconstructible(event)
@@ -449,7 +449,7 @@ def getEffRT(
             flag["passed"][tt] = True
 
             for mcTrack in event.MCTrack:
-                ddfMCTrack = DdfMCTrack(mcTrack, Event=event, IP1_Angle=20.)
+                ddfMCTrack = DdfMCTrack(mcTrack, Event=event, IP1_Angle=80.)
                 if not (
                     ddfMCTrack.XZ <= xz_max/1e3 and
                     ddfMCTrack.XZ >= xz_min/1e3 and
@@ -471,13 +471,13 @@ def getEffNRT(
     h:            dict,
     mcSet:        str,
     z_ref:        dict = {1: 430., 11: 450, 3: 430., 13: 450},
-    ip1_angle:    float = 20.,
+    ip1_angle:    float = 80.,
     weight:       Union[int, float] = 1,
     track_types:  tuple = (1, 11, 3, 13),
-    xz_min:       float = -20.,
-    yz_min:       float = -20.,
-    xz_max:       float =  20.,
-    yz_max:       float =  20.,
+    xz_min:       float = -80.,
+    yz_min:       float = -80.,
+    xz_max:       float =  80.,
+    yz_max:       float =  80.,
 ):
     _sf = sfTrackIsReconstructible(event)
     _ds = dsTrackIsReconstructible(event)

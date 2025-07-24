@@ -19,9 +19,13 @@ def main():
     parser = argparse.ArgumentParser()
 
     parser.add_argument('-e', '--energy', type=float, default=200)
-    parser.add_argument('-z', '--z_ref', nargs="+", type=float, default=[430., 450., 430., 450.])
-    parser.add_argument('-xz', '--xz', type=float, default=20.)
-    parser.add_argument('-yz', '--yz', type=float, default=20.)
+    parser.add_argument('-z', '--z_ref', nargs="+", type=float, default=[430., 430., 450., 450.])
+    parser.add_argument('-xz', '--xz', type=float, default=0.)
+    parser.add_argument('-yz', '--yz', type=float, default=0.)
+    parser.add_argument('--xz-min', type=float, default=0.)
+    parser.add_argument('--xz-max', type=float, default=0.)
+    parser.add_argument('--yz-min', type=float, default=0.)
+    parser.add_argument('--yz-max', type=float, default=0.)
     parser.add_argument('-o', '--fout', type=str, default="")
     parser.add_argument('--remote-eos', type=bool, default=True)
 
@@ -31,10 +35,32 @@ def main():
     e = getRoundedE(args.energy)
     track_types = (1, 11, 3, 13)
     z_ref = {1: args.z_ref[0], 11: args.z_ref[1], 3: args.z_ref[2], 13: args.z_ref[3]}
-    xz_min = -abs(args.xz)
-    xz_max =  abs(args.xz)
-    yz_min = -abs(args.yz)
-    yz_max =  abs(args.yz)
+
+    if args.xz_min:
+        xz_min = -abs(args.xz_min)
+    else:
+        xz_min = -abs(args.xz)
+
+    if args.xz_max:
+        xz_max = -abs(args.xz_max)
+    else:
+        xz_max = -abs(args.xz)
+
+    if args.yz_min:
+        yz_min = -abs(args.yz_min)
+    else:
+        yz_min = -abs(args.yz)
+
+    if args.yz_max:
+        yz_max = -abs(args.yz_max)
+    else:
+        yz_max = -abs(args.yz)
+
+    print(f"XZ min:\t{xz_min}")
+    print(f"XZ max:\t{xz_max}")
+    print(f"YZ min:\t{yz_min}")
+    print(f"YZ max:\t{yz_max}")
+    print(xy_eff_range)
 
     if args.fout:
         fout_name = args.fout
@@ -70,34 +96,37 @@ def main():
         if not (event.EventHeader.isIP1() and thereIsAMuon(event)):
             continue
 
-        flag = getEffRT(
-            event = event,
-            h = h,
-            mcSet = "muGun.rt",
-            z_ref = z_ref,
-            weight = 1,
-            track_types = (1, 11, 3, 13),
-            xz_min = xz_min,
-            yz_min = yz_min,
-            xz_max = xz_max,
-            yz_max = yz_max
-        )
-        for tt in (1, 11, 3, 13):
-            if flag["passed"][tt]:
-                passed[tt] += 1
-            if flag["total"][tt]:
-                total[tt] += 1
+        _sf = sfTrackIsReconstructible(event)
+        _ds = dsTrackIsReconstructible(event)
 
-teff = getTEffDict(h, statOption='kfcp', suffix="rt")
-    eq = getFitEq(teff, "muGun.rt", track_types)
-    saveToRoot(teff, fout=fout, nested=False, print_filename=True)
+        if _sf==False and _ds==False:
+            continue
+
+        reco = {1: _sf, 11: _sf, 3: _ds, 13: _ds}
+
+        for tt in track_types:
+            if not reco[tt]:
+                continue
+
+            total[tt] += 1
+
+            for trk in event.Reco_MuonTracks:
+                if trk.getTrackType() != tt:
+                    continue
+
+                passed[tt] += 1
+
+
+    # teff = getTEffDict(h, statOption='kfcp', suffix="rt")
+    # eq = getFitEq(teff, "muGun.rt", track_types)
+    # saveToRoot(teff, fout=fout, nested=False, print_filename=True)
 
     eff = {}
     for tt in (1, 11, 3, 13):
-        h[tt]["dxRef"].Write()
-        h[tt]["dyRef"].Write()
-        h[tt]["dxz"].Write()
-        h[tt]["dyz"].Write()
+        # h[tt]["dxRef"].Write()
+        # h[tt]["dyRef"].Write()
+        # h[tt]["dxz"].Write()
+        # h[tt]["dyz"].Write()
 
         eff[tt] = {}
 
@@ -110,8 +139,8 @@ teff = getTEffDict(h, statOption='kfcp', suffix="rt")
         eff[tt]['eff'][0], eff[tt]['effErrUp'][0], eff[tt]['effErrLow'][0] = getEffWithError(passed[tt], total[tt])
         print(f" >> {tt}:\t{(eff[tt]['eff'][0], eff[tt]['effErrUp'][0], eff[tt]['effErrLow'][0])}")
 
-        a0, a0h, a0l = getEffWithError(a[tt]["passed"], a[tt]["total"])
-        print(f" ~~ {tt}:\t{(a0, a0h, a0l)}")
+        # a0, a0h, a0l = getEffWithError(a[tt]["passed"], a[tt]["total"])
+        # print(f" ~~ {tt}:\t{(a0, a0h, a0l)}")
 
         eff[tt]['tree'].Branch("eff",         eff[tt]['eff'],       "eff/F")
         eff[tt]['tree'].Branch("effErrUp",    eff[tt]['effErrUp'],  "effErrUp/F")
@@ -120,6 +149,8 @@ teff = getTEffDict(h, statOption='kfcp', suffix="rt")
         eff[tt]['tree'].Fill()
         eff[tt]['tree'].Write()
 
+    print(passed[tt], total[tt])
+    print(fout_name)
     fout.Close()
 
 

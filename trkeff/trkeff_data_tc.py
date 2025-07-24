@@ -47,7 +47,7 @@ def main():
 
     geofile = args.geofile
     if run!=8329:
-        data = SndData(Run=run, InputDir=input_dir, Files=files, Geofile=geofile)
+        data = SndData(Run=run, InputDir=input_dir, TopDir=f"run_{run:06d}_legacy", Files=files, Geofile=geofile)
     else:
         data = SndData(Run=run, InputDir="/eos/experiment/sndlhc/users/sii/2024", TopDir=str(run), Files=files, Geofile=geofile)
 
