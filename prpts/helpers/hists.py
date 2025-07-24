@@ -44,8 +44,8 @@ def get_h_xy(
     xmax:  float =  10.,
     ymin:  float = -5.,
     ymax:  float =  75.,
-    xBins: int   =  40,
-    yBins: int   =  40
+    xBins: int   =  80,
+    yBins: int   =  80
 ):
     h_xy = TH2F(
         f"h_xy_{tt}_{run_or_mcSet}",

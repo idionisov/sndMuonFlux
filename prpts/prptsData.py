@@ -24,7 +24,8 @@ def main():
     run = args.run
     files = args.files
     track_types = args.track_types
-    z_ref = {1: 430., 11: 450., 3: 430., 13: 450.}
+    z_ref = {1: 430., 11: 430., 3: 450., 13: 450.}
+    geofile = args.geofile
 
     if not args.input_dir:
         input_dir = f"/eos/user/i/idioniso/1_Data/Tracks"
@@ -42,7 +43,7 @@ def main():
         fout_name = args.fout
 
     if run != 8329:
-        data = SndData(Run=run, InputDir=input_dir, Files=files)
+        data = SndData(Run=run, InputDir=input_dir, TopDir=f"run_{run:06d}_legacy", Files=files)
     else:
         data = SndData(Run=run, InputDir="/eos/experiment/sndlhc/users/sii/2024", TopDir=str(run), Files=files)
     data.Print()
