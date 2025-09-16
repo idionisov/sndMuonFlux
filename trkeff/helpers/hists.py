@@ -142,7 +142,7 @@ def fillHistsTC(
     run_or_mcSet: Union[int, str] = 7080,
     z_ref:        float = 450.,
     tt:           int = 1,
-    ip1_angle:    float = 0.02,
+    ip1_angle:    float = 1e12,
     chi2ndf:      dict = {1: 1e9, 11: 1e9, 3: 1e9, 13: 1e9},
     weight:       Union[int, float] = 1,
 ) -> dict:
@@ -219,7 +219,7 @@ def fillHistsTC(
         result["total"] = True
 
     for trk2 in event.Reco_MuonTracks:
-        trk2 = DdfTrack(Track=trk2, Event=event, IP1_Angle=1e9)
+        trk2 = DdfTrack(Track=trk2, Event=event, IP1_Angle=1e12)
 
         if not (
             trk2.tt==tt and
@@ -357,7 +357,7 @@ def fillHistsRT(
         if "yz.n"       in prpts: h[tt]['yz.n'][1].Fill(yz_tag, n, weight)
 
     for trk2 in event.Reco_MuonTracks:
-        trk2 = DdfTrack(Track=trk2, Event=event, IP1_Angle=0.08)
+        trk2 = DdfTrack(Track=trk2, Event=event, IP1_Angle=1e12)
 
         if not (
             trk2.tt==tt and

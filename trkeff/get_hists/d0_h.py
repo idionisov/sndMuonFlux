@@ -25,3 +25,21 @@ def get_h_d0_eff(
     )
     roostyling.axes(h_d0_eff[0], h_d0_eff[1])
     return h_d0_eff
+
+
+
+# def get_h_dRef(
+#     run_or_mcSet: Union[int, str],
+#     tt: int
+# ):
+#     if tt not in (1, 11, 3, 13):
+#         raise ValueError(f"{tt} is an invalid track type!")
+
+#     h_dRef = TH1F(
+#         f"h{i}_dRef_{tt}_{run_or_mcSet}",
+#         f"{i} {tt} {run_or_mcSet};Tag and candidate track distance at #Z_{{ref}} [cm];",
+#         100, 0, 10
+#     )
+
+#     roostyling.axes(h_dRef)
+#     return h_dRef

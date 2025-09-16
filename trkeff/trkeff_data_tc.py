@@ -19,9 +19,9 @@ def main():
     parser.add_argument('-r', '--run', type=int, default=7080)
     parser.add_argument('-f', '--files', type=str, default='*f10*.root')
     parser.add_argument('-i', '--input-dir', type=str, default='/eos/user/i/idioniso/1_Data/Tracks')
-    parser.add_argument('-z', '--z_ref', nargs="+", type=float, default=[430., 450., 430., 450.])
-    parser.add_argument('-xz', '--xz', type=float, default=20.)
-    parser.add_argument('-yz', '--yz', type=float, default=20.)
+    parser.add_argument('-z', '--z_ref', nargs="+", type=float, default=[430., 430., 450., 450.])
+    parser.add_argument('-xz', '--xz', type=float, default=1e12)
+    parser.add_argument('-yz', '--yz', type=float, default=1e12)
     parser.add_argument('-o', '--fout', type=str, default="")
     parser.add_argument('--chi2ndf', nargs="+", type=float, default=[1e6, 1e6, 1e6, 1e6])
     parser.add_argument('--geofile', type=str, default="/eos/experiment/sndlhc/convertedData/physics/2023/geofile_sndlhc_TI18_V4_2023.root")
@@ -74,7 +74,7 @@ def main():
                 tag_trk = DdfTrack(Track=tag_trk, Event=event, IP1_Angle=xz_max)
 
                 if not (
-                    tag_trk.tt == att(tt) and 
+                    tag_trk.tt == att(tt) and
                     tag_trk.IsGood(xz_min=xz_min/1e3, xz_max=xz_max/1e3, yz_min=yz_min/1e3, yz_max=yz_max/1e3)
                 ):
                     continue
@@ -83,11 +83,11 @@ def main():
                 x_tag = ref_tag.X()
                 y_tag = ref_tag.Y()
 
-                if not (
-                    x_tag < -10. and x_tag > -42. and
-                    y_tag <  48. and y_tag > 19.
-                ):
-                    continue
+#                if not (
+#                    x_tag < -10. and x_tag > -42. and
+#                    y_tag <  48. and y_tag > 19.
+#                ):
+#                    continue
 
                 if tag_trk.tt==1 or tag_trk.tt==11:
                     if not (
