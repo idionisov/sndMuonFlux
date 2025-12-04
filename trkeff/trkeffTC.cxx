@@ -70,12 +70,6 @@ EffResults computeTrackingEfficiencies(const TrkeffConfig& cfg) {
     SNDLHCEventHeader *eventHeader = new SNDLHCEventHeader();
     ch->SetBranchAddress("EventHeader.", &eventHeader);
 
-    TClonesArray *mcTracks = nullptr;
-    if (isMC) {
-        mcTracks = new TClonesArray("ShipMCTrack");
-        ch->SetBranchAddress("MCTrack", &mcTracks);
-    }
-
     // ----------------------------
     //  Prepare histograms
     // ----------------------------
@@ -85,6 +79,19 @@ EffResults computeTrackingEfficiencies(const TrkeffConfig& cfg) {
 
     for (auto& [name, creator] : histFactory)
         histGroups[name] = creator(runNum, trackTypes, hParams);
+
+
+
+    // ----------------------------
+    //  Check if it's Monte Carlo
+    // ----------------------------
+    TClonesArray *mcTracks = nullptr;
+    if (isMC) {
+        runNum = 0;
+        mcTracks = new TClonesArray("ShipMCTrack");
+        ch->SetBranchAddress("MCTrack", &mcTracks);
+    }
+
 
 
     // ----------------------------
@@ -114,7 +121,7 @@ EffResults computeTrackingEfficiencies(const TrkeffConfig& cfg) {
             lastStatusPercentage = currentStatusPercentage;
         }
         ch->GetEntry(i_entry);
-        if (!eventHeader->isIP1()) continue;
+        // if (!eventHeader->isIP1()) continue;
 
         if (isMC) {
             weight = dynamic_cast<ShipMCTrack*>(mcTracks->At(0))->GetWeight();
@@ -148,8 +155,6 @@ EffResults computeTrackingEfficiencies(const TrkeffConfig& cfg) {
 
                 if (!trackIsConverged(tagTrack)) continue;
                 if (!trackIsWithinAngleRange(tagTrack, cfg.xzMin, cfg.xzMax, cfg.yzMin, cfg.yzMax)) continue;
-
-
 
                 if (tagTrackType==3 || tagTrackType==13){
                     if (!isNearVetoBar(tagTrack, mfHits, cfg.vetoBarDistance)) continue;

@@ -23,6 +23,7 @@ if __name__=="__main__":
         args.fout,
         args.n_break
     )
+    print(bunch_counts)
 
     elapsed = time.time() - start
     m, s = divmod(elapsed, 60)

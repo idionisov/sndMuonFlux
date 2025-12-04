@@ -57,7 +57,7 @@ if __name__ == "__main__":
     parser.add_argument('-g', '--geofile', type=str, required=True, help="Geofile to accurately compute distance of closest approach to MuFilter scintillator bars.")
     parser.add_argument('-o', '--fout', type=str, nargs="+", default=[], help="Optional output files (root by default to store histograms as well, but could be csv -- both formats simultaneously are supported). Csv files store only efficiencies while root files store root objets as well.")
     parser.add_argument('-z', '--z-ref', nargs="+", type=float, default=[430., 430., 450., 450.], help="Reference z-plane coordinates for each track type (types 1, 11, 3, 13). Provide 4 numbers: zRef1 zRef11 zRef3 zRef13.")
-    parser.add_argument('-x', '--x-range', nargs=2, type=float, default=[-48., -10.], help="Fiducial x-coordinate range [xmin, xmax] in cm for tracks to be counted.")
+    parser.add_argument('-x', '--x-range', nargs=2, type=float, default=[-42., -10.], help="Fiducial x-coordinate range [xmin, xmax] in cm for tracks to be counted.")
     parser.add_argument('-y', '--y-range', nargs=2, type=float, default=[19., 48.], help="Fiducial y-coordinate range [ymin, ymax] in cm for tracks to be counted.")
     parser.add_argument('-xz', '--xz-range', nargs=2, type=float, default=[-1e12, 1e12], help="Allowed tagging track angle in XZ plane [xzMin, xzMax] in mrad. Tracks outside this range are ignored.")
     parser.add_argument('-yz', '--yz-range', nargs=2, type=float, default=[-1e12, 1e12], help="Allowed tagging track angle in YZ plane [yzMin, yzMax] in mrad. Tracks outside this range are ignored.")

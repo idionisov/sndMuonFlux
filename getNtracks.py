@@ -10,10 +10,13 @@ this_dir = os.path.dirname(os.path.abspath(__file__))
 
 
 def get_nTracks_pipeline(args):
+    print("Starting nTracks extraction")
+
     # Assumes the analysis is compiled in build directory
     path_to_ntrackslib = os.path.join(this_dir, ".", "build", "nTracks", "libnTracks.so")
     path_to_ntrackslib = os.path.abspath(path_to_ntrackslib)
     ROOT.gSystem.Load(path_to_ntrackslib)
+    print(hasattr(ROOT, "getNTracks"))
 
     if len(args.fout) == 0:
         print("No output file specified. Tracking efficiency results will be printed without saving.")
@@ -21,6 +24,8 @@ def get_nTracks_pipeline(args):
     else:
         outnames = " ".join(args.fout)
     outfile_root, outfile_csv = pythonHelpers.general.get_outfiles(outnames)
+    print(outfile_root)
+    print(outfile_csv)
 
     run  = pythonHelpers.general.get_snd_run(args.input_files)
     fill = pythonHelpers.general.get_lhc_fill(args.input_files)

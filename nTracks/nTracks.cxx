@@ -77,7 +77,6 @@ std::vector<std::array<int, 4>> getNTracks(
         }
 
         ch->GetEntry(i_entry);
-        if (!eventHeader->isIP1()) continue;
 
         // Process tracks
         for (int i = 0; i < tracks->GetEntries(); ++i) {
@@ -87,19 +86,36 @@ std::vector<std::array<int, 4>> getNTracks(
 
             if (!trackIsConverged(track)) continue;
             if (!trackIsWithinArea(track, zRef.at(i_tt), xmin, xmax, ymin, ymax)) continue;
+            if (!trackIsWithinAngleRange(track, xzMin, xzMax, yzMin, yzMax)) continue;
 
 
             trackCounts[i_tt]++;
-            if (
-                eventHeader->isIP2() && !eventHeader->isB1() && !eventHeader->isB2()
-            ) { trackCountsIP2[i_tt]++; }
-            if (eventHeader->isB1Only()) trackCountsB1Only[i_tt]++;
-            if (eventHeader->isB2noB1()) trackCountsB2noB1[i_tt]++;
-            if (
-                eventHeader->isIP2() && eventHeader->isB1() && eventHeader->isB2()
-            ) { trackCountsIP2B1B2[i_tt]++; }
+            if (eventHeader->isIP1())
+            {
+                std::cout << "IP1 event???\n";
+                //trackCounts[i_tt]++;
+            }
+            else
+            {
+                if ( eventHeader->isIP2() )
+                {
+                    if (!eventHeader->isB1() && !eventHeader->isB2())
+                    {
+                        trackCountsIP2[i_tt]++;
+                    }
+                    else if ( eventHeader->isB1() && eventHeader->isB2() )
+                    {
+                        trackCountsIP2B1B2[i_tt]++;
+                    }
+                }
+
+                if (eventHeader->isB1Only()) trackCountsB1Only[i_tt]++;
+                if (eventHeader->isB2noB1()) trackCountsB2noB1[i_tt]++;
+            }
         }
     }
+    
+
     std::cout << "Event loop completed." << std::endl;
 
     result.push_back(trackCounts);
@@ -128,9 +144,10 @@ std::vector<std::array<int, 4>> getNTracks(
 
 int main(int argc, char **argv)
 {
-    if (argc < 14) {
+    if (argc < 14)
+    {
         std::cerr << "Too few arguments!" << std::endl;
-        exit(-1);
+        return -1;
     }
     std::cout << "Starting track counter..." << std::endl;
 
