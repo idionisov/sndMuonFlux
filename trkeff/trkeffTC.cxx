@@ -121,7 +121,7 @@ EffResults computeTrackingEfficiencies(const TrkeffConfig& cfg) {
             lastStatusPercentage = currentStatusPercentage;
         }
         ch->GetEntry(i_entry);
-        // if (!eventHeader->isIP1()) continue;
+        if (!eventHeader->isIP1()) continue;
 
         if (isMC) {
             weight = dynamic_cast<ShipMCTrack*>(mcTracks->At(0))->GetWeight();

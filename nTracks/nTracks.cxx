@@ -89,11 +89,9 @@ std::vector<std::array<int, 4>> getNTracks(
             if (!trackIsWithinAngleRange(track, xzMin, xzMax, yzMin, yzMax)) continue;
 
 
-            trackCounts[i_tt]++;
             if (eventHeader->isIP1())
             {
-                std::cout << "IP1 event???\n";
-                //trackCounts[i_tt]++;
+                trackCounts[i_tt]++;
             }
             else
             {
@@ -114,7 +112,7 @@ std::vector<std::array<int, 4>> getNTracks(
             }
         }
     }
-    
+
 
     std::cout << "Event loop completed." << std::endl;
 
