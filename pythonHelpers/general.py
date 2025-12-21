@@ -81,3 +81,59 @@ def get_outfiles(o: str = ""):
                 raise ValueError(f"Unrecognized output file: {p}")
 
     return out_root, out_csv
+
+
+def is_mc(ch: ROOT.TChain) -> bool:
+    if ch.GetBranch("MCTrack"):
+        return True
+    else:
+        return False
+
+
+def get_angle_xz(track):
+    if isinstance(track, ROOT.ShipMCTrack):
+        return ROOT.TMath.ATan(track.GetPx()/track.GetPz())
+    elif isinstance(track, ROOT.sndRecoTrack):
+        return track.getAngleXZ()
+    else:
+        raise ValueError(f"Cannot get track angle of {type(track)}!")
+
+def get_angle_yz(track):
+    if isinstance(track, ROOT.ShipMCTrack):
+        return ROOT.TMath.ATan(track.GetPy()/track.GetPz())
+    elif isinstance(track, ROOT.sndRecoTrack):
+        return track.getAngleYZ()
+    else:
+        raise ValueError(f"Cannot get track angle of {type(track)}!")
+
+def get_point_at_z(track, Z: float) -> ROOT.TVector3:
+    if isinstance(track, ROOT.ShipMCTrack):
+        px = track.GetPx()
+        py = track.GetPy()
+        pz = track.GetPz()
+
+        px_0 = track.GetStartX()
+        py_0 = track.GetStartY()
+        pz_0 = track.GetStartZ()
+
+        t = (Z - pz_0) / pz
+
+        x = px_0 + px * t
+        y = py_0 + py * t
+
+        return ROOT.TVector3(x, y, Z)
+
+    elif isinstance(track, ROOT.sndRecoTrack):
+        start = track.getStart()
+        mom = track.getTrackMom()
+        track_slope = (Z - start.Z())/mom.Z()
+
+        intersection_point = ROOT.TVector3(
+            start.X() + track_slope*mom.X(),
+            start.Y() + track_slope*mom.Y(),
+            Z
+        )
+        return intersection_point
+
+    else:
+        raise ValueError(f"Unknown track type: {type(track)}!")

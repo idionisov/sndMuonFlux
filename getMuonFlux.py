@@ -2,6 +2,7 @@ import argparse
 import os
 import time
 
+import numpy as np
 import ROOT
 
 import pythonHelpers.bunch_struct
@@ -90,41 +91,45 @@ def compute_bunch_correction(args,
     track_counts: dict,
     outfile_root: str
 ):
-    ch.GetEntry(0)
-    acc_mode = ch.EventHeader.GetAccMode()
+    # ch.GetEntry(0)
+    # acc_mode = ch.EventHeader.GetAccMode()
 
-    if acc_mode == 12:   # Heavy-ion
-        correction = {tt: 1.0 for tt in track_counts["IP1"]}
+    # if acc_mode == 12:   # Heavy-ion
+    #     correction = {tt: 1.0 for tt in track_counts["IP1"]}
 
-        if "IP2B1B2" in track_counts and track_counts["IP2B1B2"]:
-            print("\n" + "-"*50)
-            print("Beginning bunch structure extraction.")
-            print("-"*50)
+    #     if "IP2B1B2" in track_counts and track_counts["IP2B1B2"]:
+    #         print("\n" + "-"*50)
+    #         print("Beginning bunch structure extraction.")
+    #         print("-"*50)
 
-            bunch_nums = pythonHelpers.bunch_struct.extract_bunch_struct(
-                args.input_files, outfile_root, args.n_break
-            )
+    #         bunch_nums = pythonHelpers.bunch_struct.extract_bunch_struct(
+    #             args.input_files, outfile_root, args.n_break
+    #         )
 
-            bunch_counts = {
-                "IP2B1B2":     len(set(bunch_nums["B2"]) & set(bunch_nums["B1"]) - set(bunch_nums["IP1"])),
-                "IP1&IP2B1B2": len(set(bunch_nums["B2"]) & set(bunch_nums["B1"]) & set(bunch_nums["IP1"]))
-            }
+    #         bunch_counts = {
+    #             "IP2B1B2":     len(set(bunch_nums["B2"]) & set(bunch_nums["B1"]) - set(bunch_nums["IP1"])),
+    #             "IP1&IP2B1B2": len(set(bunch_nums["B2"]) & set(bunch_nums["B1"]) & set(bunch_nums["IP1"]))
+    #         }
 
-            for tt in track_counts["IP1"]:
-                correction[tt] = 1 - (
-                    track_counts["IP2B1B2"][tt] * bunch_counts["IP1&IP2B1B2"]
-                ) / (
-                    track_counts["IP1"][tt] * bunch_counts["IP2B1B2"]
-                )
+    #         for tt in track_counts["IP1"]:
+    #             correction[tt] = 1 - (
+    #                 track_counts["IP2B1B2"][tt] * bunch_counts["IP1&IP2B1B2"]
+    #             ) / (
+    #                 track_counts["IP1"][tt] * bunch_counts["IP2B1B2"]
+    #             )
 
-            print(f"Correction factors: {correction}")
+    #         print(f"Correction factors: {correction}")
 
-        return correction
+    #     return correction
 
-    if acc_mode == 11:   # Proton
-        pass            # No corrections for protons are implemented yet
+    # if acc_mode == 11:   # Proton
+    #     pass            # No corrections for protons are implemented yet
 
+    # No corrections
     return {tt: 1.0 for tt in track_counts["IP1"]}
+
+
+
 
 
 
@@ -135,7 +140,7 @@ def run_muon_flux_pipeline(args) -> dict:
 
     # Output files
     if len(args.fout) == 0:
-        print("No output file specified. Tracking efficiency results will be printed without saving.")
+        print("No output file specified. Final results will be printed without saving.")
         outnames = args.fout
     else:
         outnames = " ".join(args.fout)
@@ -143,51 +148,82 @@ def run_muon_flux_pipeline(args) -> dict:
 
     # Load run, fill, accMode from TChain
     ch, run, fill, acc_mode = pythonHelpers.general.load_run_info(args.input_files)
-    lumi = pythonHelpers.lumi.get_lumi_eos(args.input_files)
-    if acc_mode==12:
-        lumi_err = 0.035*lumi
-    elif acc_mode==11:
-        lumi_err = 0.025*lumi
+    if ch.GetBranch("MCTrack"):
+        is_mc = True
     else:
-        lumi_err = 0
+        is_mc = False
 
 
-    # Track counts
-    track_counts = get_or_compute_track_counts(args, this_dir)
+    if not is_mc:
+        lumi = pythonHelpers.lumi.get_lumi_eos(args.input_files)
+        if acc_mode==12:
+            lumi_err = 0.035*lumi
+        elif acc_mode==11:
+            lumi_err = 0.025*lumi
+        else:
+            lumi_err = 0
 
-    # Tracking efficiencies
-    effs = get_or_compute_efficiencies(args, outfile_root, this_dir)
 
-    # CORRECTION FACTORS MIGHT BE MORE CONVENIENT TO APPLY SEPARATELY
-    # Correction factors from bunch structure
-    corr_factors = compute_bunch_correction(
-        args, ch, track_counts, outfile_root
-    )
+        # Track counts
+        track_counts = get_or_compute_track_counts(args, this_dir)
 
-    # Compute final muon flux
-    muon_flux = pythonHelpers.muon_flux.compute_fluxes_per_track_type(
-        track_counts, lumi, area, effs,
-        lumi_err, args.scale, corr_factors
-    )
+        # Tracking efficiencies
+        effs = get_or_compute_efficiencies(args, outfile_root, this_dir)
 
-    # Save outputs
-    pythonHelpers.muon_flux.write_output(
-        outfile_root, run, fill, args.scale,
-        track_counts, effs, muon_flux, "muonFlux"
-    )
-    pythonHelpers.muon_flux.write_output(
-        outfile_csv, run, fill, args.scale,
-        track_counts, effs, muon_flux, "muonFlux"
-    )
+        # CORRECTION FACTORS MIGHT BE MORE CONVENIENT TO APPLY SEPARATELY
+        # Correction factors from bunch structure
+        corr_factors = compute_bunch_correction(
+            args, ch, track_counts, outfile_root
+        )
 
-    return {
-        "run": run,
-        "fill": fill,
-        "acc_mode": acc_mode,
-        "track_counts": track_counts,
-        "effs": effs,
-        "muon_flux": muon_flux
-    }
+        # Compute final muon flux
+        muon_flux = pythonHelpers.muon_flux.compute_fluxes_per_track_type(
+            track_counts, lumi, area, effs,
+            lumi_err, args.scale, corr_factors
+        )
+
+        # Save outputs
+        pythonHelpers.muon_flux.write_output(
+            outfile_root, run, fill, args.scale,
+            track_counts, effs, muon_flux, "muonFlux"
+        )
+        pythonHelpers.muon_flux.write_output(
+            outfile_csv, run, fill, args.scale,
+            track_counts, effs, muon_flux, "muonFlux"
+        )
+
+        return {
+            "run": run,
+            "fill": fill,
+            "acc_mode": acc_mode,
+            "track_counts": track_counts,
+            "effs": effs,
+            "muon_flux": muon_flux
+        }
+
+    else:
+        muon_flux = pythonHelpers.muon_flux.get_muon_flux_mc(
+            input_files = args.input_files,
+            sigma = args.sigma,
+            col_rate = args.col_rate,
+            L_LHC = args.L_lhc,
+            x_range = args.x_range,
+            y_range = args.y_range,
+            z_ref = args.z_ref,
+            xz_range = args.xz_range,
+            yz_range = args.yz_range,
+            trk_eff = args.tracking_efficiencies,
+            trkeff_err = args.tracking_efficiency_errors
+        )
+
+        return {
+            "run": np.nan,
+            "fill": np.nan,
+            "acc_mode": acc_mode,
+            "effs": np.nan,
+            "muon_flux": muon_flux
+        }
+
 
 
 
@@ -203,13 +239,13 @@ if __name__ == "__main__":
 
 
     parser.add_argument('-i', '--input-files', type=str, required=True, help="Regex pattern for input ROOT files with reconstructed tracks, e.g., '/path/to/files*.root'.")
-    parser.add_argument('-ntrks', '--track-counts', nargs="+", type=float, default=[0, 0, 0, 0], help="Track counts for each track type (types 1, 11, 3, 13). Provide 4 numbers: nTrks1 nTrks11 nTrks3 nTrks13.")
-    parser.add_argument('-effs', '--tracking-efficiencies', nargs="+", type=float, default=[0, 0, 0, 0], help="Tracking efficiency for each track type (types 1, 11, 3, 13). Provide 4 numbers: eff1 eff11 eff3 eff13.")
-    parser.add_argument('-effErr', '--tracking-efficiency-errors', nargs="+", type=float, default=[0, 0, 0, 0], help="Tracking efficiency errors for each track type (types 1, 11, 3, 13). Provide 4 numbers: err1 err11 err3 err13.")
+    parser.add_argument('-ntrks', '--track-counts', nargs=4, type=float, default=[0, 0, 0, 0], help="Track counts for each track type (types 1, 11, 3, 13). Provide 4 numbers: nTrks1 nTrks11 nTrks3 nTrks13.")
+    parser.add_argument('-effs', '--tracking-efficiencies', nargs=4, type=float, default=[0, 0, 0, 0], help="Tracking efficiency for each track type (types 1, 11, 3, 13). Provide 4 numbers: eff1 eff11 eff3 eff13.")
+    parser.add_argument('-effErr', '--tracking-efficiency-errors', nargs=4, type=float, default=[0, 0, 0, 0], help="Tracking efficiency errors for each track type (types 1, 11, 3, 13). Provide 4 numbers: err1 err11 err3 err13.")
     parser.add_argument("-Lerr", "--lumi-relative-err", type=float, default=0, help="Relative error on luminosity.")
     parser.add_argument('-g', '--geofile', type=str, default="", help="Geofile to accurately compute distance of closest approach to MuFilter scintillator bars.")
     parser.add_argument('-o', '--fout', type=str, nargs="+", default=[], help="Optional output files (root by default to store all objects, but could be csv -- both formats simultaneously are supported). Csv files store only efficiencies while root files store root objets as well.")
-    parser.add_argument('-z', '--z-ref', nargs="+", type=float, default=[430., 430., 450., 450.], help="Reference z-plane coordinates for each track type (types 1, 11, 3, 13). Provide 4 numbers: zRef1 zRef11 zRef3 zRef13.")
+    parser.add_argument('-z', '--z-ref', nargs=4, type=float, default=[430., 430., 450., 450.], help="Reference z-plane coordinates for each track type (types 1, 11, 3, 13). Provide 4 numbers: zRef1 zRef11 zRef3 zRef13.")
     parser.add_argument('-x', '--x-range', nargs=2, type=float, default=[-42., -10.], help="Fiducial x-coordinate range [xmin, xmax] in cm for tracks to be counted.")
     parser.add_argument('-y', '--y-range', nargs=2, type=float, default=[19., 48.], help="Fiducial y-coordinate range [ymin, ymax] in cm for tracks to be counted.")
     parser.add_argument('-xz', '--xz-range', nargs=2, type=float, default=[-1e12, 1e12], help="Allowed tagging track angle in XZ plane [xzMin, xzMax] in mrad. Tracks outside this range are ignored.")
@@ -221,6 +257,9 @@ if __name__ == "__main__":
     parser.add_argument('--n-break', type=int, default=1e7, help="Breakpoint for the number of events processed (bunch structure and tracking efficiency).")
     parser.add_argument('--hist-params', type=str, default=default_hist_params, help="Histogram parameter config file.")
     parser.add_argument('-sc', '--scale', type=int, default=1, help="Scaling used for track reconstruction")
+    parser.add_argument('-x-sec', '--sigma', type=float, default=8e7, help="Cross section for inelastic hadron collisions for MC simulations.")
+    parser.add_argument('-r', '--col-rate', type=float, default=100e6, help="Collision rate in Monte Carlo simulations.")
+    parser.add_argument('--L-lhc', type=float, default=1, help="Luminosity to normalize to in nb.")
 
     args = parser.parse_args()
     results = run_muon_flux_pipeline(args)
