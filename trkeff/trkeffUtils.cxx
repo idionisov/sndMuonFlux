@@ -111,18 +111,17 @@ EffResults createAndSaveTEffs(
     TTree* effTree
 )
 {
-    EffResults result{};
-
     // ----------------------------
     //  Create or get output directory
     // ----------------------------
+    EffResults results;
     TDirectory* runDir = nullptr;
     if (outFile) {
         outFile->cd();
         runDir = dynamic_cast<TDirectory*>(outFile->Get(Form("Run%d", runNum)));
         if (!runDir)
             runDir = outFile->mkdir(Form("Run%d", runNum));
-    }
+        }
 
     for (const auto& [groupName, histPair] : histGroups) {
         TObjArray* histsPassed = histPair.first;
@@ -191,7 +190,7 @@ EffResults createAndSaveTEffs(
             }
 
             if (groupName == "x.y") {
-                result.at(i) = computeTrackingEfficiency(*teff, xmin, xmax, ymin, ymax);
+                results.at(i) = computeTrackingEfficiency(*teff, xmin, xmax, ymin, ymax);
             }
 
             delete teff;
@@ -212,16 +211,16 @@ EffResults createAndSaveTEffs(
         effTree->Branch("eff", &branchEff, "eff/D");
         effTree->Branch("effErr", &branchErr, "effErr/D");
 
-        for (size_t i = 0; i < result.size(); ++i) {
+        for (size_t i = 0; i < results.size(); ++i) {
             branchRunNum = runNum;
             branchTrackType = trackTypes[i];
-            branchEff = result[i].first;
-            branchErr = result[i].second;
+            branchEff = results.at(i).first;
+            branchErr = results.at(i).second;
             effTree->Fill();
         }
     }
 
-    return result;
+    return results;
 }
 
 

@@ -1,4 +1,5 @@
 #include <iostream>
+#include <numeric>
 #include <algorithm>
 
 #include "TString.h"
@@ -23,21 +24,44 @@
 #include "muonFluxUtils.h"
 #include "trkeffUtils.h"
 #include "histograms.h"
-#include "trkeffTC.h"
+#include "trkeffTT.h"
 
 
 
-EffResults computeTrackingEfficiencies(const TrkeffConfig& cfg) {
-    EffResults results;
-    for (auto &p : results) p = {0.0, 0.0}; // Initialize to zeros
+std::vector<double> computeTrackingEfficiencies(
+    TString inputStr,
+    TString geoFile,
+    TString outFileName,
+    TString histParamsFile,
+    double xmin   = -48.0,
+    double xmax   = -10.0,
+    double ymin   =  19.0,
+    double ymax   =  48.0,
+    double xzMin  = -1e12,
+    double xzMax  =  1e12,
+    double yzMin  = -1e12,
+    double yzMax  =  1e12,
+    double zRef1  =  430.0,
+    double zRef11 =  430.0,
+    double zRef3  =  450.0,
+    double zRef13 =  450.0,
+    double vetoBarDistance = 3.0,
+    double us5BarDistance = 3.0,
+    double scifiToDSTrackDistance = 3.0,
+    long nBreak = 1e7
+) {
+
+    std::vector<double> results = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
     auto startTime = std::chrono::steady_clock::now();
+
+    std::vector<double> zRef = {zRef1, zRef11, zRef3, zRef13};
 
     // ----------------------------
     //  Load histogram parameters
     // ----------------------------
-    TEnv hParams(cfg.histParamsFile);
+    TEnv hParams(histParamsFile);
     if (hParams.GetValue("xy.xAxis.bins", -1) == -1) {
-        std::cerr << "Failed to read xy.xAxis.bins from " << cfg.histParamsFile.Data() << std::endl;
+        std::cerr << "Failed to read xy.xAxis.bins from " << histParamsFile.Data() << std::endl;
         exit(-1);
     } else {
         std::cout << "TEnv loaded successfully!" << std::endl;
@@ -46,13 +70,13 @@ EffResults computeTrackingEfficiencies(const TrkeffConfig& cfg) {
     // ----------------------------
     //  Load input chain
     // ----------------------------
-    TChain *ch = loadChainWithFallback(cfg.inputStr);
+    TChain *ch = loadChainWithFallback(inputStr);
     if (!ch) {
         std::cerr << "No valid tree found!" << std::endl;
         return results;
     }
     long nEntries = ch->GetEntries();
-    long nBreak = std::min(cfg.nBreak, nEntries);
+    nBreak = std::min(nBreak, nEntries);
     bool isMC = hasBranch(ch, "MCTrack");
 
     // ----------------------------
@@ -98,7 +122,7 @@ EffResults computeTrackingEfficiencies(const TrkeffConfig& cfg) {
     //  Geometry
     // ----------------------------
     TPython::Exec("from SndlhcGeo import GeoInterface");
-    TPython::Exec(Form("geo = GeoInterface('%s')", cfg.geoFile.Data()));
+    TPython::Exec(Form("geo = GeoInterface('%s')", geoFile.Data()));
 
     MuFilter* MufiDet = (MuFilter*) gROOT->GetListOfGlobals()->FindObject("MuFilter");
     MufiDet->InitEvent(eventHeader);
@@ -138,7 +162,7 @@ EffResults computeTrackingEfficiencies(const TrkeffConfig& cfg) {
                 if (oppositeTrackType.at(candTrackType) != tagTrackType)
                     continue;
 
-                double z = cfg.zRef[i_candTrackType];
+                double z = zRef[i_candTrackType];
                 TVector3 tagRefPoint = tagTrack->getPointAtZ(z);
                 double xTag = tagRefPoint.X();
                 double yTag = tagRefPoint.Y();
@@ -154,12 +178,12 @@ EffResults computeTrackingEfficiencies(const TrkeffConfig& cfg) {
                 int nDsHitsMax = *std::max_element(dsHitCounts.begin(), dsHitCounts.end());
 
                 if (!trackIsConverged(tagTrack)) continue;
-                if (!trackIsWithinAngleRange(tagTrack, cfg.xzMin, cfg.xzMax, cfg.yzMin, cfg.yzMax)) continue;
+                if (!trackIsWithinAngleRange(tagTrack, xzMin, xzMax, yzMin, yzMax)) continue;
 
                 if (tagTrackType==3 || tagTrackType==13){
-                    if (!isNearVetoBar(tagTrack, mfHits, cfg.vetoBarDistance)) continue;
+                    if (!isNearVetoBar(tagTrack, mfHits, vetoBarDistance)) continue;
                 } else if (tagTrackType==1 || tagTrackType==11) {
-                    if (!isNearUS5Bar(tagTrack, mfHits, cfg.us5BarDistance)) continue;
+                    if (!isNearUS5Bar(tagTrack, mfHits, us5BarDistance)) continue;
                 }
                 else continue;
 
@@ -168,7 +192,7 @@ EffResults computeTrackingEfficiencies(const TrkeffConfig& cfg) {
                 getHist1D("y",   i_candTrackType, false)->Fill(yTag, weight);
 
                 double chi2ndf = tagTrack->getChi2Ndf();
-                if (trackIsWithinArea(tagTrack, cfg.zRef.at(i_candTrackType), cfg.xmin, cfg.xmax, cfg.ymin, cfg.ymax)) {
+                if (trackIsWithinArea(tagTrack, zRef.at(i_candTrackType), xmin, xmax, ymin, ymax)) {
 
 
                     getHist1D("chi2ndf",   i_candTrackType, false)->Fill(chi2ndf, weight);
@@ -204,15 +228,15 @@ EffResults computeTrackingEfficiencies(const TrkeffConfig& cfg) {
                     double yCand = candRefPoint.Y();
 
                     if (
-                        TMath::Abs(xTag - xCand) > cfg.scifiToDSTrackDistance ||
-                        TMath::Abs(yTag - yCand) > cfg.scifiToDSTrackDistance
+                        TMath::Abs(xTag - xCand) > scifiToDSTrackDistance ||
+                        TMath::Abs(yTag - yCand) > scifiToDSTrackDistance
                     ) continue;
 
                     getHist2D("x.y", i_candTrackType, true)->Fill(xTag, yTag, weight);
                     getHist1D("x",   i_candTrackType, true)->Fill(xTag, weight);
                     getHist1D("y",   i_candTrackType, true)->Fill(yTag, weight);
 
-                    if (trackIsWithinArea(tagTrack, cfg.zRef.at(i_candTrackType), cfg.xmin, cfg.xmax, cfg.ymin, cfg.ymax)){
+                    if (trackIsWithinArea(tagTrack, zRef.at(i_candTrackType), xmin, xmax, ymin, ymax)){
                         getHist1D("chi2ndf",   i_candTrackType, true)->Fill(chi2ndf, weight);
 
                         if (candTrackType==1 or candTrackType==11){
@@ -243,17 +267,17 @@ EffResults computeTrackingEfficiencies(const TrkeffConfig& cfg) {
     TFile* fout = nullptr;
     TTree* effTree = nullptr;
 
-    if (!cfg.outFileName.IsNull()) {
-        fout = new TFile(cfg.outFileName, "UPDATE");
-        effTree = (TTree*)fout->Get("trkeff");  // <-- remove 'TTree*' here!
+    if (!outFileName.IsNull()) {
+        fout = new TFile(outFileName, "UPDATE");
+        effTree = (TTree*)fout->Get("trkeff");
         if (!effTree) {
             effTree = new TTree("trkeff", "Tracking efficiencies");
         }
     }
 
-    results = createAndSaveTEffs(
+    EffResults results_arr = createAndSaveTEffs(
         runNum, trackTypes,
-        cfg.xmin, cfg.xmax, cfg.ymin, cfg.ymax,
+        xmin, xmax, ymin, ymax,
         fout, effTree
     );
 
@@ -275,50 +299,8 @@ EffResults computeTrackingEfficiencies(const TrkeffConfig& cfg) {
               << h << "h " << m << "m " << s << "s ("
               << elapsedSec << " seconds)" << std::endl;
 
-    return results;
-}
-
-
-
-// Nontrivial types (std::map) don't work in python-wrappers
-std::vector<double> computeTrackingEfficienciesPy(
-    TString inputStr,
-    TString geoFile,
-    TString outFileName,
-    TString histParamsFile,
-    double xmin=-48.0, double xmax=-10.0, double ymin=19.0, double ymax=48.0,
-    double xzMin = -1e12, double xzMax = 1e12, double yzMin = -1e12, double yzMax = 1e12,
-    double zRef1 = 430.0, double zRef11 = 430.0, double zRef3 = 450.0, double zRef13 = 450.0,
-    double vetoBarDistance = 3.0,
-    double us5BarDistance = 3.0,
-    double scifiToDSTrackDistance = 3.0,
-    long nBreak = 1e7
-) {
-    TrkeffConfig cfg;
-    cfg.inputStr            = inputStr;
-    cfg.geoFile             = geoFile;
-    cfg.outFileName         = outFileName;
-    cfg.xmin                = xmin;
-    cfg.xmax                = xmax;
-    cfg.ymin                = ymin;
-    cfg.ymax                = ymax;
-    cfg.xzMin               = xzMin;
-    cfg.xzMax               = xzMax;
-    cfg.yzMin               = yzMin;
-    cfg.yzMax               = yzMax;
-    cfg.zRef[0]             = zRef1;
-    cfg.zRef[1]             = zRef11;
-    cfg.zRef[2]             = zRef3;
-    cfg.zRef[3]             = zRef13;
-    cfg.vetoBarDistance     = vetoBarDistance;
-    cfg.us5BarDistance      = us5BarDistance;
-    cfg.scifiToDSTrackDistance = scifiToDSTrackDistance;
-    cfg.nBreak              = nBreak;
-    cfg.histParamsFile      = histParamsFile;
-
-    auto effs = computeTrackingEfficiencies(cfg);
     std::vector<double> out;
-    for (const auto& [e, ee] : effs) {
+    for (const auto& [e, ee] : results_arr) {
         out.push_back(e);
         out.push_back(ee);
     }
@@ -335,35 +317,50 @@ int main(int argc, char** argv)
         return -1;
     }
 
-    TrkeffConfig cfg;
-    cfg.inputStr            = argv[1];
-    cfg.geoFile             = argv[2];
-    cfg.outFileName         = argv[3];
-    cfg.xmin                = atof(argv[4]);
-    cfg.xmax                = atof(argv[5]);
-    cfg.ymin                = atof(argv[6]);
-    cfg.ymax                = atof(argv[7]);
-    cfg.xzMin               = atof(argv[8]);
-    cfg.xzMax               = atof(argv[9]);
-    cfg.yzMin               = atof(argv[10]);
-    cfg.yzMax               = atof(argv[11]);
-    cfg.zRef[0]             = atof(argv[12]);
-    cfg.zRef[1]             = atof(argv[13]);
-    cfg.zRef[2]             = atof(argv[14]);
-    cfg.zRef[3]             = atof(argv[15]);
-    cfg.vetoBarDistance     = atof(argv[16]);
-    cfg.us5BarDistance      = atof(argv[17]);
-    cfg.scifiToDSTrackDistance = atof(argv[18]);
-    cfg.nBreak              = atol(argv[19]);
-    cfg.histParamsFile      = argv[20];
+    TString inputStr            = argv[1];
+    TString geoFile             = argv[2];
+    TString outFileName         = argv[3];
+    double xmin                = atof(argv[4]);
+    double xmax                = atof(argv[5]);
+    double ymin                = atof(argv[6]);
+    double ymax                = atof(argv[7]);
+    double xzMin               = atof(argv[8]);
+    double xzMax               = atof(argv[9]);
+    double yzMin               = atof(argv[10]);
+    double yzMax               = atof(argv[11]);
+    double zRef1               = atof(argv[12]);
+    double zRef11              = atof(argv[13]);
+    double zRef3               = atof(argv[14]);
+    double zRef13              = atof(argv[15]);
+    double vetoBarDistance     = atof(argv[16]);
+    double us5BarDistance      = atof(argv[17]);
+    double scifiToDSTrackDistance = atof(argv[18]);
+    long nBreak              = atol(argv[19]);
+    TString histParamsFile      = argv[20];
 
-    auto effResults = computeTrackingEfficiencies(cfg);
+    auto effResults = computeTrackingEfficiencies(
+        inputStr, geoFile, outFileName, histParamsFile,
+        xmin, xmax, ymin, ymax, xzMin, xzMax, yzMin, yzMax,
+        zRef1, zRef11, zRef3, zRef13, vetoBarDistance,
+        us5BarDistance, scifiToDSTrackDistance, nBreak
+    );
 
-    for (size_t i_tt = 0; i_tt < effResults.size(); ++i_tt) {
-        std::cout << "Track type " << i_tt << ":\t"
-                  << effResults[i_tt].first << " +/- " << effResults[i_tt].second
+    unsigned i = 0;
+    while (i < effResults.size()){
+        double eff    = effResults.at(i);
+        double effErr = effResults.at(i+1);
+
+        std::cout << "Track type " << trackTypes.at(i/2) << ":\t"
+                  << eff << " +/- " << effErr
                   << std::endl;
+
+        i+=2;
     }
+    // for (size_t i_tt = 0; i_tt < effResults.size(); ++i_tt) {
+    //     std::cout << "Track type " << i_tt << ":\t"
+    //               << effResults[i_tt].first << " +/- " << effResults[i_tt].second
+    //               << std::endl;
+    // }
 
     return 0;
 }

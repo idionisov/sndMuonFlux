@@ -67,7 +67,7 @@ def get_or_compute_efficiencies(args, outfile_root: str, this_dir: str):
     lib_path = os.path.abspath(os.path.join(this_dir, "build", "trkeff", "libtrkeffUtils.so"))
     ROOT.gSystem.Load(lib_path)
 
-    effs_vec = ROOT.computeTrackingEfficienciesPy(
+    effs_vec = ROOT.computeTrackingEfficiencies_TT(
         args.input_files,
         args.geofile,
         outfile_root,
@@ -159,7 +159,7 @@ def run_muon_flux_pipeline(args) -> dict:
         if acc_mode==12:
             lumi_err = 0.035*lumi
         elif acc_mode==11:
-            lumi_err = 0.025*lumi
+            lumi_err = 0.020*lumi
         else:
             lumi_err = 0
 

@@ -1,7 +1,7 @@
 #include <vector>
 #include "trkeffUtils.h"
-#include "trkeffTC.h"
+#include "trkeffTT.h"
 
 #ifdef __CLING__
-#pragma link C++ function computeTrackingEfficienciesPy;
+#pragma link C++ function computeTrackingEfficiencies;
 #endif

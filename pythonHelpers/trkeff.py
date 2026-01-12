@@ -66,6 +66,22 @@ def there_is_a_muon(
     return False
 
 
+def mc_track_crossed_fiducial_area(
+    entry: ROOT.TChain,
+    z_ref: float = 430.,
+    x_range: tuple = (-42., -10.),
+    y_range: tuple = (18., 49.)
+) -> bool:
+    for mctrack in entry.MCTrack:
+        if mctrack.GetMotherId()==-1:
+            mcTrkZref = pythonHelpers.general.get_point_at_z(mctrack, z_ref)
+            if (
+                x_range[0] <= mcTrkZref.X() <= x_range[1] and
+                y_range[0] <= mcTrkZref.Y() <= y_range[1]
+            ):
+                return True
+    return False
+
 
 def sf_track_is_reconstructible(
     mcEvent: ROOT.TChain
@@ -205,11 +221,23 @@ def get_trkeff_mct(
 
         _sf = pythonHelpers.trkeff.sf_track_is_reconstructible(entry)
         _ds = pythonHelpers.trkeff.ds_track_is_reconstructible(entry)
+        muon_passed_within_A = {
+            tt: mc_track_crossed_fiducial_area(entry,
+                z_ref = z_ref[i_tt],
+                x_range = x_range,
+                y_range = y_range
+            ) for i_tt, tt in enumerate((1, 11, 3, 13))
+        }
 
         if _sf==False and _ds==False:
             continue
 
-        reco = {1: _sf, 11: _sf, 3: _ds, 13: _ds}
+        reco = {
+            1:  _sf and muon_passed_within_A[1],
+            11: _sf and muon_passed_within_A[11],
+            3:  _ds and muon_passed_within_A[3],
+            13: _ds and muon_passed_within_A[13],
+        }
         weight = entry.MCTrack[0].GetWeight() * Ks
 
         for tt in trackTypes:

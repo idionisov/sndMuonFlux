@@ -106,7 +106,6 @@ def save_all_to_csv(
 
 
 
-
 def save_muonFlux_to_root(
     filename: str,
     run: int,
@@ -226,8 +225,6 @@ def write_output(
 
 
 
-
-
 def compute_muon_flux_mc_asymm(Nr, dNr, L_LHC, A, eps, eps_err_up, eps_err_down):
     phi = Nr / (A * eps * L_LHC)
 
@@ -291,10 +288,10 @@ def get_muon_flux_mc(
     ch = pythonHelpers.general.load_snd_TChain(input_files)
     n_entries = ch.GetEntries()
 
-    print(f"{'Entries':<10} : {n_entries:,}")
-    print(f"{'Luminosity':<10} : {L_MC}")
-    print(f"{'Area':<10} : {A}")
-    print(f"{'Scaling':<10} : {Ks}")
+    print(f"{ 'Entries':<10} : {n_entries:,}")
+    print(f"{ 'Luminosity':<10} : {L_MC}")
+    print(f"{ 'Area':<10} : {A}")
+    print(f"{ 'Scaling':<10} : {Ks}")
 
     if (
         any(eff == 0 for eff in trk_eff) or
@@ -352,7 +349,9 @@ def get_muon_flux_mc(
                 ):
                     Nrate["mcTrk"] += w
                     Nrate_err2["mcTrk"] += w*w
+                    break
 
+        reco_track_types = set()
         for trk in entry.Reco_MuonTracks:
             if not (trk.getTrackFlag() and trk.getTrackMom().Z()):
                 continue
@@ -363,20 +362,19 @@ def get_muon_flux_mc(
             y = ref.Y()
 
             if not (
-                x >= xy["min"]["x"] and
-                y >= xy["min"]["y"] and
-                x <= xy["max"]["x"] and
-                y <= xy["max"]["y"]
+                xy["min"]["x"] <= x <= xy["max"]["x"] and
+                xy["min"]["y"] <= y <= xy["max"]["y"]
             ):
                 continue
+            reco_track_types.add(tt)
 
+        for tt in reco_track_types:
             Nrate[tt] += w
             Nrate_err2[tt] += w*w
 
-    mf, statVars, effVars = {}, {}, {}, {}, {}
+    mf, statVars, effVars = {}, {}, {}
 
     mf = {}
-
     statVars = {}
     effVars = {}
 
@@ -397,11 +395,156 @@ def get_muon_flux_mc(
         varPhiEff  = effVars[tt]
 
         print(f"\n > {tt}:\tΦ = {phi:.03f} ± {phiErr:.03f}    \033[1;39m[fb/cm²]\033[0m")
-        print(f"\n > {tt}:\tNr/A = {Nr/A}    \033[1;39m[cm^-2 s^-1]\033[0m")
-        print(f"\n > {tt}:\tNr/(A.L_MC) = {Nr/(A*L_MC)}    \033[1;39m [fb cm^-2]\033[0m")
+        # print(f"\n > {tt}:\tNr/A = {Nr/A}    \033[1;39m[cm^-2 s^-1]\033[0m")
+        # print(f"\n > {tt}:\tNr/(A.L_MC) = {Nr/(A*L_MC)}    \033[1;39m [fb cm^-2]\033[0m")
         print(f"        \tError:  {phiErr*100/phi:.03f} %")
         print(f"        \tStatistics: {varPhiStat} ({varPhiStat*100/(varPhiStat+varPhiEff):.02f} %)")
         print(f"        \tEfficiency: {varPhiEff} ({varPhiEff*100/(varPhiStat+varPhiEff):.02f} %)")
 
 
     return mf
+
+
+def get_muon_flux_mc_xy_dist(
+    input_files: str,
+    sigma:       float        = 8e7,    # [nb]
+    col_rate:    float        = 100e6,  # [s^-1]
+    L_LHC:       float        = 1,      # [nb]
+    x_range:     tuple[float, float] = (-42., -10.), # [cm]
+    y_range:     tuple[float, float] = ( 19.,  48.), # [cm]
+    z_ref:       tuple[float, float, float, float] = (430., 430., 450., 450.), # [cm]
+    xz_range:    tuple[float, float] = (-1e12, 1e12), # [mrad]
+    yz_range:    tuple[float, float] = (-1e12, 1e12), # [mrad]
+    trk_eff:      tuple[float, float, float, float] = (0, 0, 0, 0),
+    trkeff_err:  tuple[float, float, float, float] = (0, 0, 0, 0),
+    nbins_x:     int = 10,
+    nbins_y:     int = 10
+):
+    L_MC = col_rate/sigma       # [nb^-1 s^-1]
+    Ks = L_LHC / L_MC           # []
+
+    trackTypes = (1, 11, 3, 13, "mcTrk")
+    xy = {
+        'min': {'x': x_range[0], 'y': y_range[0]},
+        'max': {'x': x_range[1], 'y': y_range[1]}
+    }
+
+    z_ref = {1: z_ref[0], 11: z_ref[1], 3: z_ref[2], 13: z_ref[3]}
+    A = (xy['max']['x']-xy['min']['x']) * (xy['max']['y']-xy['min']['y'])
+
+    ch = pythonHelpers.general.load_snd_TChain(input_files)
+    n_entries = ch.GetEntries()
+
+    print(f"{ 'Entries':<10} : {n_entries:,}")
+    print(f"{ 'Luminosity':<10} : {L_MC}")
+    print(f"{ 'Area':<10} : {A}")
+    print(f"{ 'Scaling':<10} : {Ks}")
+
+    if (
+        any(eff == 0 for eff in trk_eff) or
+        any(err == 0 for err in trkeff_err)
+    ):
+        print("Tracking efficiencies were not provided and will be calculated...")
+        eps = pythonHelpers.trkeff.get_trkeff_mct(
+            input_files = input_files,
+            sigma = sigma,
+            col_rate = col_rate,
+            L_LHC = L_LHC,
+            x_range = x_range,
+            y_range = y_range,
+            z_ref = (z_ref[1], z_ref[11], z_ref[3], z_ref[13]),
+            xz_range = xz_range,
+            yz_range = yz_range,
+        )
+    else:
+        eps = {
+            1:  (trk_eff[0], trkeff_err[0]),
+            11: (trk_eff[1], trkeff_err[1]),
+            3:  (trk_eff[2], trkeff_err[2]),
+            13: (trk_eff[3], trkeff_err[3])
+        }
+        print("Tracking efficiencies were provided:")
+        print(eps)
+    eps["mcTrk"] = (1, 0)
+
+    hists = {}
+    for tt in trackTypes:
+        hists[tt] = ROOT.TH2D(f"h_{tt}", f"xy dist for {tt}", nbins_x, x_range[0], x_range[1], nbins_y, y_range[0], y_range[1])
+
+    eventMCmu = {}
+    next_print = 0
+    for i_entry, entry in enumerate(ch):
+        progress = (i_entry * 100) // n_entries
+        if progress >= next_print:
+            print(f"{progress:.0f} %")
+            next_print += 5
+
+        if not entry.EventHeader.isIP1():
+            continue
+
+        w = 0.0
+        for mctrack in entry.MCTrack:
+            if mctrack.GetMotherId()==-1:
+                eventMCmu[i_entry] = mctrack.GetWeight()
+                w = eventMCmu.get(i_entry, 0.0)
+
+                mcTrkZref = pythonHelpers.general.get_point_at_z(mctrack, 430)
+                if (
+                    xy['min']['x'] <= mcTrkZref.X() <= xy['max']['x'] and
+                    xy['min']['y'] <= mcTrkZref.Y() <= xy['max']['y']
+                ):
+                    hists["mcTrk"].Fill(mcTrkZref.X(), mcTrkZref.Y(), w)
+                    break
+        
+        for trk in entry.Reco_MuonTracks:
+            if not (trk.getTrackFlag() and trk.getTrackMom().Z()):
+                continue
+
+            tt = trk.getTrackType()
+            ref = pythonHelpers.general.get_point_at_z(trk, z_ref[tt])
+            x = ref.X()
+            y = ref.Y()
+
+            if not (
+                xy["min"]["x"] <= x <= xy["max"]["x"] and
+                xy["min"]["y"] <= y <= xy["max"]["y"]
+            ):
+                continue
+            hists[tt].Fill(x, y, w)
+
+    mf, statVars, effVars = {}, {}, {}
+
+    for tt in trackTypes:
+        bin_contents = []
+        for i in range(1, hists[tt].GetNbinsX() + 1):
+            for j in range(1, hists[tt].GetNbinsY() + 1):
+                bin_contents.append(hists[tt].GetBinContent(i, j))
+        
+        if bin_contents and np.sum(bin_contents) > 0:
+            Nr = np.mean(bin_contents)
+            dNr = np.std(bin_contents)
+        else:
+            Nr = 0
+            dNr = 0
+
+        # The computed flux is per bin area. To get the total flux, it should be scaled by the number of bins.
+        num_bins = nbins_x * nbins_y
+        area_per_bin = A / num_bins
+
+        D_sym  = compute_muon_flux_mc(
+            Nr, dNr, L_LHC, area_per_bin, eps[tt][0], eps[tt][1], Ks
+        )
+        phi, phiErr = D_sym["results"]
+        statVars[tt] = D_sym["variances"]["stat"]
+        effVars[tt] = D_sym["variances"]["eff"]
+
+        mf[tt]     = (phi, phiErr)
+        varPhiStat = statVars[tt]
+        varPhiEff  = effVars[tt]
+
+        print(f"\n > {tt}:\tΦ = {phi:.03f} ± {phiErr:.03f}    \033[1;39m[fb/cm²]\033[0m")
+        print(f"        \tError:  {phiErr*100/phi if phi > 0 else 0:.03f} %")
+        print(f"        \tStatistics: {varPhiStat} ({varPhiStat*100/(varPhiStat+varPhiEff) if (varPhiStat+varPhiEff) > 0 else 0:.02f} %)")
+        print(f"        \tEfficiency: {varPhiEff} ({varPhiEff*100/(varPhiStat+varPhiEff) if (varPhiStat+varPhiEff) > 0 else 0:.02f} %)")
+
+    return mf, hists

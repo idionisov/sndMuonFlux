@@ -14,6 +14,11 @@ this_dir = os.path.dirname(os.path.abspath(__file__))
 
 
 def get_trkeff_pipeline(args):
+    if not args.geofile:
+        if not args.mct:
+            print("WARNING: Geofile was not provided. Input assumed to be Monte Carlo simulations.")
+        args.mct = True
+
     if args.mct:
         print("MC-Truth method is being used!")
     else:
@@ -33,7 +38,7 @@ def get_trkeff_pipeline(args):
 
     ch, run, fill, acc_mode = pythonHelpers.general.load_run_info(args.input_files)
     if not pythonHelpers.general.is_mc(ch) or args.mct==False:
-        vec = ROOT.computeTrackingEfficienciesPy(
+        vec = ROOT.computeTrackingEfficiencies_TT(
             args.input_files,
             args.geofile,
             outfile_root,
@@ -74,7 +79,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Script for computing the tracking efficiency.")
 
     parser.add_argument('-i', '--input-files', type=str, required=True, help="Regex pattern for input ROOT files with reconstructed tracks, e.g., '/path/to/files*.root'.")
-    parser.add_argument('-g', '--geofile', type=str, required=True, help="Geofile to accurately compute distance of closest approach to MuFilter scintillator bars.")
+    parser.add_argument('-g', '--geofile', type=str, required=False, help="Geofile to accurately compute distance of closest approach to MuFilter scintillator bars.")
     parser.add_argument('-o', '--fout', type=str, nargs="+", default=[], help="Optional output files (root by default to store histograms as well, but could be csv -- both formats simultaneously are supported). Csv files store only efficiencies while root files store root objets as well.")
     parser.add_argument('-z', '--z-ref', nargs="+", type=float, default=[430., 430., 450., 450.], help="Reference z-plane coordinates for each track type (types 1, 11, 3, 13). Provide 4 numbers: zRef1 zRef11 zRef3 zRef13.")
     parser.add_argument('-x', '--x-range', nargs=2, type=float, default=[-42., -10.], help="Fiducial x-coordinate range [xmin, xmax] in cm for tracks to be counted.")
