@@ -1,11 +1,11 @@
 ROOT_GENERATE_DICTIONARY(trkeffDict
     trkeffUtils.h
-    trkeffTC.h
+    trkeffTT.h
     LINKDEF LinkDef.h
 )
 
 add_library(trkeffUtils SHARED
-    trkeffTC.cxx
+    trkeffTT.cxx
     trkeffUtils.cxx
     histograms.cxx
     trkeffDict.cxx
@@ -34,8 +34,8 @@ find_library(SHIPDATA_LIB ShipData PATHS ${FAIRSHIP}/lib)
 find_library(SHIPLHC_LIB ShipData PATHS ${SNDSW_ROOT}/lib)
 target_link_libraries(trkeffUtils PRIVATE ${SHIPDATA_LIB} ${SHIPLHC_LIB} muonFluxUtils)
 
-add_executable(getTrkeffTC trkeffTC.cxx histograms.cxx)
-target_link_libraries(getTrkeffTC PRIVATE
+add_executable(getTrkeffTT trkeffTT.cxx histograms.cxx)
+target_link_libraries(getTrkeffTT PRIVATE
     ${ROOT_LIBRARIES}
     ROOT::ROOTTPython
     ROOT::Core
