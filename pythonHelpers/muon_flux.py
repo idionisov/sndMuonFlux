@@ -338,7 +338,10 @@ def get_muon_flux_mc(
             continue
 
         for mctrack in entry.MCTrack:
-            if mctrack.GetMotherId()==-1:
+            if (
+                mctrack.GetMotherId()==-1 and
+                abs(mctrack.GetPdgCode())==13
+            ):
                 eventMCmu[i_entry] = mctrack.GetWeight()
                 w = eventMCmu.get(i_entry, 0.0)
 
@@ -366,6 +369,7 @@ def get_muon_flux_mc(
                 xy["min"]["y"] <= y <= xy["max"]["y"]
             ):
                 continue
+
             reco_track_types.add(tt)
 
         for tt in reco_track_types:

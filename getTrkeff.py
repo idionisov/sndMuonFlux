@@ -15,11 +15,11 @@ this_dir = os.path.dirname(os.path.abspath(__file__))
 
 def get_trkeff_pipeline(args):
     if not args.geofile:
-        if not args.mct:
+        if not args.MC_Truth:
             print("WARNING: Geofile was not provided. Input assumed to be Monte Carlo simulations.")
-        args.mct = True
+        args.MC_Truth = True
 
-    if args.mct:
+    if args.MC_Truth:
         print("MC-Truth method is being used!")
     else:
         print("Tagging track method is being used!")
@@ -29,6 +29,7 @@ def get_trkeff_pipeline(args):
     path_to_trkefflib = os.path.abspath(path_to_trkefflib)
     ROOT.gSystem.Load(path_to_trkefflib)
 
+
     if len(args.fout) == 0:
         print("No output file specified. Tracking efficiency results will be printed without saving.")
         outnames = args.fout
@@ -37,8 +38,8 @@ def get_trkeff_pipeline(args):
     outfile_root, outfile_csv = pythonHelpers.general.get_outfiles(outnames)
 
     ch, run, fill, acc_mode = pythonHelpers.general.load_run_info(args.input_files)
-    if not pythonHelpers.general.is_mc(ch) or args.mct==False:
-        vec = ROOT.computeTrackingEfficiencies_TT(
+    if not pythonHelpers.general.is_mc(ch) or args.MC_Truth==False:
+        vec = ROOT.computeTrackingEfficiencies(
             args.input_files,
             args.geofile,
             outfile_root,
@@ -91,7 +92,7 @@ if __name__ == "__main__":
     parser.add_argument('--sf-to-ds-dist', type=float, default=3.0, help="Maximum distance between tagging and candidate tracks at reference plane for successful match.")
     parser.add_argument('--n-break', type=int, default=1e7, help="Breakpoint for the number of events processed.")
     parser.add_argument('--hist-params', type=str, default=default_hist_params, help="Histogram parameter config file.")
-    parser.add_argument('-mct', '--mct', type=bool, default=False, help="Wether to use the Monte Carlo Truth method or not. Defaults to Tagging track method.")
+    parser.add_argument('-mct', '--MC-Truth', action='store_true', help="Wether to use the Monte Carlo Truth method or not. Defaults to Tagging track method.")
     parser.add_argument('-x-sec', '--sigma', type=float, default=8e7, help="Cross section for inelastic hadron collisions for MC simulations.")
     parser.add_argument('-r', '--col-rate', type=float, default=100e6, help="Collision rate in Monte Carlo simulations.")
     parser.add_argument('--L-lhc', type=float, default=1, help="Luminosity to normalize to in nb.")
