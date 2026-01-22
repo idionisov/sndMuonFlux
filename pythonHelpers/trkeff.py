@@ -75,7 +75,7 @@ def mc_track_crossed_fiducial_area(
     for mctrack in entry.MCTrack:
         if (
             mctrack.GetMotherId()==-1 and
-            abs(mcTrack.GetPdgCode()) == 13
+            abs(mctrack.GetPdgCode()) == 13
         ):
             mcTrkZref = pythonHelpers.general.get_point_at_z(mctrack, z_ref)
             if (

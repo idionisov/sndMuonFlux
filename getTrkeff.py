@@ -15,11 +15,11 @@ this_dir = os.path.dirname(os.path.abspath(__file__))
 
 def get_trkeff_pipeline(args):
     if not args.geofile:
-        if not args.mct:
+        if not args.MC_Truth:
             print("WARNING: Geofile was not provided. Input assumed to be Monte Carlo simulations.")
-        args.mct = True
+        args.MC_Truth = True
 
-    if args.mct:
+    if args.MC_Truth:
         print("MC-Truth method is being used!")
     else:
         print("Tagging track method is being used!")
@@ -91,7 +91,7 @@ if __name__ == "__main__":
     parser.add_argument('--sf-to-ds-dist', type=float, default=3.0, help="Maximum distance between tagging and candidate tracks at reference plane for successful match.")
     parser.add_argument('--n-break', type=int, default=1e7, help="Breakpoint for the number of events processed.")
     parser.add_argument('--hist-params', type=str, default=default_hist_params, help="Histogram parameter config file.")
-    parser.add_argument('-mct', '--mct', type=bool, default=False, help="Wether to use the Monte Carlo Truth method or not. Defaults to Tagging track method.")
+    parser.add_argument('--mct', '--MC-Truth', action='store_true', help="Wether to use the Monte Carlo Truth method or not. Defaults to Tagging track method.")
     parser.add_argument('-x-sec', '--sigma', type=float, default=8e7, help="Cross section for inelastic hadron collisions for MC simulations.")
     parser.add_argument('-r', '--col-rate', type=float, default=100e6, help="Collision rate in Monte Carlo simulations.")
     parser.add_argument('--L-lhc', type=float, default=1, help="Luminosity to normalize to in nb.")
