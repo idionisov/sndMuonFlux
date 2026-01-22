@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.23)
 project(muonFlux)
 
 find_package(ROOT REQUIRED COMPONENTS RIO Core Hist MathCore Tree ROOTTPython)
+find_package(Python3 COMPONENTS Development REQUIRED)
 include(${ROOT_USE_FILE})
 
 set(SNDSW_ROOT $ENV{SNDSW_ROOT})

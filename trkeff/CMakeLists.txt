@@ -32,7 +32,13 @@ link_directories(
 
 find_library(SHIPDATA_LIB ShipData PATHS ${FAIRSHIP}/lib)
 find_library(SHIPLHC_LIB ShipData PATHS ${SNDSW_ROOT}/lib)
-target_link_libraries(trkeffUtils PRIVATE ${SHIPDATA_LIB} ${SHIPLHC_LIB} muonFluxUtils)
+target_link_libraries(trkeffUtils PRIVATE
+    ${SHIPDATA_LIB}
+    ${SHIPLHC_LIB}
+    muonFluxUtils
+    ROOT::ROOTTPython
+    Python3::Python
+)
 
 add_executable(getTrkeffTT trkeffTT.cxx histograms.cxx)
 target_link_libraries(getTrkeffTT PRIVATE
