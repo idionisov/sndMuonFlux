@@ -68,7 +68,6 @@ std::vector<std::array<int, 4>> getNTracks(
     auto startTime = std::chrono::steady_clock::now();
     int lastStatusPercentage = -1;
     for (unsigned i_entry = 0; i_entry < nEntries; ++i_entry) {
-
         // Print status every 5%
         int currentStatusPercentage = static_cast<int>(i_entry*100.0 / nEntries);
         if (currentStatusPercentage % 5 == 0 && currentStatusPercentage != lastStatusPercentage){

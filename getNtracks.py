@@ -46,7 +46,7 @@ def get_nTracks_pipeline(args):
     if args.bunch_correction:
         mu_non_ip1 = {}
         bunch_slots = pythonHelpers.bunch_struct.extract_bunch_struct(
-            args.input_str,
+            args.input_files,
         )
 
         if acc_mode==11: # Protons
@@ -61,11 +61,22 @@ def get_nTracks_pipeline(args):
             N_IP1_and_IP2 = pythonHelpers.bunch_struct.get_bunch_subset_count(bunch_slots, include=("IP1", "IP2"))
             N_IP2Only = pythonHelpers.bunch_struct.get_bunch_subset_count(bunch_slots, include=("IP2",), exclude=("IP1", "B1", "B2"))
 
+
+            print(N_mu_ip2_dict)
+            print(N_mu_b1_only_dict)
+            print(N_mu_b2nob1_dict)
+            print(N_IP1_and_B1)
+            print(N_B1Only)
+            print(N_IP1_and_B2)
+            print(N_B2noB1)
+            print(N_IP1_and_IP2)
+            print(N_IP2Only)
+
             print("Bunch structure corrections (% of all tracks):")
-            for tt, total_counts in counts:
-                N_mu_b1 = N_mu_b1_only_dict[tt] * (N_IP1_and_B1 / N_B1Only)
-                N_mu_b2nob1 = N_mu_b2nob1_dict[tt] * (N_IP1_and_B2 / N_B2noB1)
-                N_mu_ip2 = N_mu_ip2_dict[tt] * (N_IP1_and_IP2 / N_IP2Only)
+            for tt, total_counts in counts.items():
+                N_mu_b1 = N_mu_b1_only_dict[tt] * (N_IP1_and_B1 / N_B1Only) if N_B1Only>0 else 0
+                N_mu_b2nob1 = N_mu_b2nob1_dict[tt] * (N_IP1_and_B2 / N_B2noB1) if N_B2noB1>0 else 0
+                N_mu_ip2 = N_mu_ip2_dict[tt] * (N_IP1_and_IP2 / N_IP2Only) if N_IP2Only>0 else 0
                 N_mu_all = N_mu_b1 + N_mu_b2nob1 + N_mu_ip2
 
                 print(f" === Track type {tt} ===")
