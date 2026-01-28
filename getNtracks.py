@@ -3,6 +3,7 @@ import os
 
 import ROOT
 
+import pythonHelpers.bunch_struct
 import pythonHelpers.general
 import pythonHelpers.nTracks
 
@@ -27,8 +28,9 @@ def get_nTracks_pipeline(args):
     print(outfile_root)
     print(outfile_csv)
 
-    run  = pythonHelpers.general.get_snd_run(args.input_files)
-    fill = pythonHelpers.general.get_lhc_fill(args.input_files)
+    # run  = pythonHelpers.general.get_snd_run(args.input_files)
+    # fill = pythonHelpers.general.get_lhc_fill(args.input_files)
+    _, run, fill, acc_mode = pythonHelpers.general.load_run_info(args.input_files)
 
     vec = ROOT.getNTracks(
         args.input_files,
@@ -40,6 +42,62 @@ def get_nTracks_pipeline(args):
     counts.update({
         "Run": run, "Fill": fill, "scale": args.scale
     })
+
+    if args.bunch_correction:
+        mu_non_ip1 = {}
+        bunch_slots = pythonHelpers.bunch_struct.extract_bunch_struct(
+            args.input_files,
+        )
+
+        if acc_mode==11: # Protons
+            N_mu_ip2_dict = pythonHelpers.nTracks.get_track_counts(vec, "IP2")
+            N_mu_b1_only_dict  = pythonHelpers.nTracks.get_track_counts(vec, "B1Only")
+            N_mu_b2nob1_dict  = pythonHelpers.nTracks.get_track_counts(vec, "B2noB1")
+
+            N_IP1_and_B1 = pythonHelpers.bunch_struct.get_bunch_subset_count(bunch_slots, include=("IP1", "B1"))
+            N_B1Only = pythonHelpers.bunch_struct.get_bunch_subset_count(bunch_slots, include=("B1",), exclude=("IP1", "IP2", "B2"))
+            N_IP1_and_B2 = pythonHelpers.bunch_struct.get_bunch_subset_count(bunch_slots, include=("IP1", "B2"))
+            N_B2noB1 = pythonHelpers.bunch_struct.get_bunch_subset_count(bunch_slots, include=("B2",), exclude=("IP1", "IP2", "B1"))
+            N_IP1_and_IP2 = pythonHelpers.bunch_struct.get_bunch_subset_count(bunch_slots, include=("IP1", "IP2"))
+            N_IP2Only = pythonHelpers.bunch_struct.get_bunch_subset_count(bunch_slots, include=("IP2",), exclude=("IP1", "B1", "B2"))
+
+
+            print(N_mu_ip2_dict)
+            print(N_mu_b1_only_dict)
+            print(N_mu_b2nob1_dict)
+            print(N_IP1_and_B1)
+            print(N_B1Only)
+            print(N_IP1_and_B2)
+            print(N_B2noB1)
+            print(N_IP1_and_IP2)
+            print(N_IP2Only)
+
+            print("Bunch structure corrections (% of all tracks):")
+            for tt, total_counts in counts.items():
+                N_mu_b1 = N_mu_b1_only_dict[tt] * (N_IP1_and_B1 / N_B1Only) if N_B1Only>0 else 0
+                N_mu_b2nob1 = N_mu_b2nob1_dict[tt] * (N_IP1_and_B2 / N_B2noB1) if N_B2noB1>0 else 0
+                N_mu_ip2 = N_mu_ip2_dict[tt] * (N_IP1_and_IP2 / N_IP2Only) if N_IP2Only>0 else 0
+                N_mu_all = N_mu_b1 + N_mu_b2nob1 + N_mu_ip2
+
+                print(f" === Track type {tt} ===")
+                print(f"  >> B1:     [{N_mu_b1*100/total_counts:.02f} %]")
+                print(f"  >> B2:     [{N_mu_b1*100/total_counts:.02f} %]")
+                print(f"  >> IP2:    [{N_mu_b1*100/total_counts:.02f} %]")
+                print(f"\033[1m  >> Total:  [{N_mu_all*100/total_counts:.02f} %]\033[0m")
+        elif acc_mode==12: # Heavy-Ions
+            N_mu_ip2b1b2_dict = pythonHelpers.nTracks.get_track_counts(vec, "IP2B1B2")
+            N_IP1_and_IP2_and_B1_and_B2 = pythonHelpers.bunch_struct.get_bunch_subset_count(bunch_slots, include=("IP1", "IP2", "B1", "B2"), exclude=())
+            N_IP2_and_B1_and_B2 = pythonHelpers.bunch_struct.get_bunch_subset_count(bunch_slots, include=("IP2", "B1", "B2"), exclude=("IP1",))
+
+
+            print("Bunch structure corrections (% of all tracks):")
+            for tt, total_counts in counts:
+                N_mu_ip2b1b2 = N_mu_ip2b1b2_dict[tt] * (N_IP1_and_IP2_and_B1_and_B2 / N_IP2_and_B1_and_B2)
+
+                print(f" === Track type {tt} ===")
+                print(f"\033[1m  >> Total:  [{N_mu_ip2b1b2*100/total_counts:.02f} %]\033[0m")
+
+
     print(counts)
 
     pythonHelpers.nTracks.write_output(outfile_root, run, fill, counts, args.scale)
@@ -59,6 +117,7 @@ if __name__ == "__main__":
     parser.add_argument('-xz', '--xz-range', nargs=2, type=float, default=[-1e12, 1e12], help="Allowed track angle in XZ plane [xzMin, xzMax] in mrad. Tracks outside this range are ignored.")
     parser.add_argument('-yz', '--yz-range', nargs=2, type=float, default=[-1e12, 1e12], help="Allowed track angle in YZ plane [yzMin, yzMax] in mrad. Tracks outside this range are ignored.")
     parser.add_argument('-sc', '--scale', type=int, default=1, help="Scaling used for track reconstruction")
+    parser.add_argument('--bunch-correction', action='store_true', help="Whether to apply bunch structure correction to the track count.")
 
     args = parser.parse_args()
 
