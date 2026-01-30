@@ -47,7 +47,7 @@ def get_trkeff_pipeline(args,
 
     ch, run, fill, acc_mode = pythonHelpers.general.load_run_info(args.input_files)
     if not pythonHelpers.general.is_mc(ch) or args.MC_Truth==False:
-        vec = ROOT.computeTrackingEfficiencies(
+        vec = ROOT.computeTrackingEfficiencies_TT(
             args.input_files,
             args.geofile,
             outfile_root,
