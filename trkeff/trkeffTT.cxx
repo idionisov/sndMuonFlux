@@ -142,19 +142,19 @@ std::vector<double> computeTrackingEfficiencies_TT(
         if (tagTrackCount >= nBreak) break;
 
         // Print status every 5%
-    if (i_entry >= nextTrigger1 || tagTrackCount >= nextTrigger2) {
-        int p1 = (i_entry * 100) / nEntries;
-        int p2 = (tagTrackCount * 100) / nBreak;
-        int current = std::max(p1, p2);
-        
-        if (current >= lastStatusPercentage + 5) {
-            lastStatusPercentage = (current / 5) * 5; 
-            std::cout << lastStatusPercentage << " %" << std::endl;
-        }
+        if (i_entry >= nextTrigger1 || tagTrackCount >= nextTrigger2) {
+            int p1 = (i_entry * 100) / nEntries;
+            int p2 = (tagTrackCount * 100) / nBreak;
+            int current = std::max(p1, p2);
 
-        nextTrigger1 = ((lastStatusPercentage + 5) * nEntries) / 100;
-        nextTrigger2 = ((lastStatusPercentage + 5) * nBreak) / 100;
-    }
+            if (current >= lastStatusPercentage + 5) {
+                lastStatusPercentage = (current / 5) * 5;
+                std::cout << lastStatusPercentage << " %" << std::endl;
+            }
+
+            nextTrigger1 = ((lastStatusPercentage + 5) * nEntries) / 100;
+            nextTrigger2 = ((lastStatusPercentage + 5) * nBreak) / 100;
+        }
         ch->GetEntry(i_entry);
 //        if (!eventHeader->isIP1()) continue;
 

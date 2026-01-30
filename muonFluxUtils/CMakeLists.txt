@@ -7,6 +7,7 @@ add_library(muonFluxUtils SHARED muonFluxUtils.cxx)
 
 target_include_directories(muonFluxUtils PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}
+    ${ENV_ROOT_INCLUDE_PATH}
     ${SNDSW_ROOT}/include
     ${ROOTSYS}/include
     ${FAIRROOT_ROOT}/include
@@ -19,6 +20,7 @@ target_include_directories(muonFluxUtils PUBLIC
 link_directories(
     ${SNDSW_ROOT}/lib
     ${FAIRSHIP}/lib
+    ${FAIRLIBDIR}
 )
 
 find_library(SHIPDATA_LIB ShipData PATHS ${FAIRSHIP}/lib NO_DEFAULT_PATH)
