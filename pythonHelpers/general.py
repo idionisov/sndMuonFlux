@@ -44,9 +44,24 @@ def load_run_info(input_str: str):
     return ch, run, fill, acc_mode
 
 
+def find_library(
+    lib_name: str,
+    start_dir: str,
+) -> str:
+    for root, dirs, files in os.walk(start_dir):
+        if lib_name in files:
+            found_path = os.path.join(root, lib_name)
+            print(f"Found library at: {found_path}")
+            return os.path.abspath(found_path)
+
+    raise FileNotFoundError(
+        f"Could not locate '{lib_name}' by searching recursively under '{start_dir}'."
+    )
+
+
 def compute_area(
     x_range: tuple[float, float],
-    y_range: tuple[float, float]
+        y_range: tuple[float, float]
 ) -> float:
     return abs(x_range[1] - x_range[0]) * abs(y_range[1] - y_range[0])
 

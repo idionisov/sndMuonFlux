@@ -31,7 +31,6 @@ def save_nTracks_to_csv(
     fill: int,
     counts: dict,
     scale: int = 1,
-    cols: list[str] = ["Run", "Fill", "scale", "nTracks1", "nTracks11", "nTracks3", "nTracks13"]
 ):
     if not filename.endswith(".csv"):
         filename += ".csv"
@@ -41,11 +40,20 @@ def save_nTracks_to_csv(
         "Run": run,
         "Fill": fill,
         "scale": scale,
-        "nTracks1": counts.get(1, 0),
-        "nTracks11": counts.get(11, 0),
-        "nTracks3": counts.get(3, 0),
-        "nTracks13": counts.get(13, 0)
+#        "nTracks1": counts["IP1"].get(1, 0),
+#        "nTracks11": counts["IP1"].get(11, 0),
+#        "nTracks3": counts["IP1"].get(3, 0),
+#        "nTracks13": counts["IP1"].get(13, 0)
+#        "nTracks1_IP2": counts["IP2"].get(1, 0)
     }
+    cols = list(row.keys())
+    if any(isinstance(k, str) for k in counts):
+        for b in counts:
+            for tt, trkCounts in counts[b].items():
+                suffix = f"_{b}" if b != "IP1" else ""
+                cols.append(f"nTracks{tt}{suffix}")
+                row[f"nTracks{tt}{suffix}"] = trkCounts
+    
 
     file_exists = os.path.exists(filename)
     with open(filename, 'a', newline='') as csvfile:
@@ -141,23 +149,50 @@ def save_nTracks_to_root(
 
 
 
+#def write_output(
+#    filename: str,
+#    run: int,
+#    fill: int,
+#    counts: dict,
+#    scale: int = 1,
+#    cols: list[str] = ["Run", "Fill", "scale", "nTracks1", "nTracks11", "nTracks3", "nTracks13"],
+#    tree_name: str = "nTracks",
+#    extra: dict = {
+#        "IP2": None,
+#        "B1": None,
+#        "B2": None,
+#        "IP2B1B2": None 
+#    }
+#):
+#    if not filename:
+#        return
+#
+#    if filename.endswith(".csv"):
+#        save_nTracks_to_csv(filename, run, fill, counts, scale, cols)
+#    else:
+#        if not filename.endswith(".root"):
+#            filename += ".root"
+#        save_nTracks_to_root(filename, run, fill, counts, scale, cols, tree_name)
+#
+#    print(f"Track counts have been saved to {filename}")
+
+
 def write_output(
     filename: str,
     run: int,
     fill: int,
     counts: dict,
     scale: int = 1,
-    cols: list[str] = ["Run", "Fill", "scale", "nTracks1", "nTracks11", "nTracks3", "nTracks13"],
-    tree_name: str = "nTracks"
+    tree_name: str = "nTracks",
 ):
     if not filename:
         return
 
     if filename.endswith(".csv"):
-        save_nTracks_to_csv(filename, run, fill, counts, scale, cols)
+        save_nTracks_to_csv(filename, run, fill, counts, scale)
     else:
         if not filename.endswith(".root"):
             filename += ".root"
-        save_nTracks_to_root(filename, run, fill, counts, scale, cols, tree_name)
+        save_nTracks_to_root(filename, run, fill, final_counts, scale, final_cols, tree_name)
 
     print(f"Track counts have been saved to {filename}")

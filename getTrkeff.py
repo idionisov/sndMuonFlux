@@ -1,3 +1,4 @@
+from typing import Union
 import argparse
 import os
 
@@ -7,25 +8,32 @@ import ROOT
 import pythonHelpers.general
 import pythonHelpers.trkeff
 
-this_dir = os.path.dirname(os.path.abspath(__file__))
+THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 
 
 
 
 
-def get_trkeff_pipeline(args):
+def get_trkeff_pipeline(args,
+    # Assuming build is done in the "build" directory
+    BUILD_DIR: str = os.path.join(THIS_DIR, "build")
+):
     if not args.geofile:
         if not args.MC_Truth:
-            print("WARNING: Geofile was not provided. Input assumed to be Monte Carlo simulations.")
+            print("WARNING: Geofile was not provided. Input is assumed to be Monte Carlo simulations.")
         args.MC_Truth = True
 
     if args.MC_Truth:
-        print("MC-Truth method is being used!")
+        print("MC-Truth method will be used!")
     else:
-        print("Tagging track method is being used!")
+        print("Tagging track method will be used!")
 
-    # Assumes the analysis is compiled in build directory
-    path_to_trkefflib = os.path.join(this_dir, ".", "build", "trkeff", "libtrkeffUtils.so")
+    if os.path.exists(os.path.join(BUILD_DIR, "trkeff", "libtrkeffUtils.so")):
+        path_to_trkefflib = os.path.join(BUILD_DIR, "trkeff", "libtrkeffUtils.so")
+    else:
+        print(f"WARNING: Did not find file {os.path.join(BUILD_DIR, 'trkeff', 'libtrkeffUtils.so')}")
+        print(f"WARNING: Starting recursive search in {THIS_DIR}")
+        path_to_trkefflib = pythonHelpers.general.find_library("libtrkeffUtils.so", THIS_DIR)
     path_to_trkefflib = os.path.abspath(path_to_trkefflib)
     ROOT.gSystem.Load(path_to_trkefflib)
 
@@ -74,7 +82,7 @@ def get_trkeff_pipeline(args):
 
 
 if __name__ == "__main__":
-    default_hist_params = os.path.join(this_dir, "trkeff", "histParams.conf")
+    default_hist_params = os.path.join(THIS_DIR, "trkeff", "histParams.conf")
 
 
     parser = argparse.ArgumentParser(description="Script for computing the tracking efficiency.")
@@ -90,7 +98,7 @@ if __name__ == "__main__":
     parser.add_argument('--veto-dist', type=float, default=3.0, help="Minimal distance to activated veto bar for DS tagging tracks.")
     parser.add_argument('--us5-dist', type=float, default=3.0, help="Minimal distance to activated us5 bar for SciFi tagging tracks.")
     parser.add_argument('--sf-to-ds-dist', type=float, default=3.0, help="Maximum distance between tagging and candidate tracks at reference plane for successful match.")
-    parser.add_argument('--n-break', type=int, default=1e7, help="Breakpoint for the number of events processed.")
+    parser.add_argument('--n-break', type=int, default=1e6, help="Breakpoint for the number of tagging tracks considered.")
     parser.add_argument('--hist-params', type=str, default=default_hist_params, help="Histogram parameter config file.")
     parser.add_argument('-mct', '--MC-Truth', action='store_true', help="Wether to use the Monte Carlo Truth method or not. Defaults to Tagging track method.")
     parser.add_argument('-x-sec', '--sigma', type=float, default=8e7, help="Cross section for inelastic hadron collisions for MC simulations.")

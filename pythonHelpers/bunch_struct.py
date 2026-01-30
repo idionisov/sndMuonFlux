@@ -157,7 +157,7 @@ def extract_bunch_struct(
         progress = (i_event * 100) // n_break
         if progress >= next_print:
             print(f"{progress:.0f} %")
-            next_print += 5
+            next_print += 20
 
         # Breakpoint to prevent looping through too many events
         if i_event >= n_break:
@@ -261,6 +261,26 @@ def get_bunch_counts(
         'B1': len(bunch_slots["B1"]),
         'B2': len(bunch_slots["B2"]),
 
+        # Bunches in isolation
+        'B1Only': len(
+            set(bunch_slots["B1"])
+            - set(bunch_slots["IP1"])
+            - set(bunch_slots["IP2"])
+            - set(bunch_slots["B2"])
+        ),
+        'B2noB1': len(
+            set(bunch_slots["B2"])
+            - set(bunch_slots["IP1"])
+            - set(bunch_slots["IP2"])
+            - set(bunch_slots["B1"])
+        ),
+        'IP2Only': len(
+            set(bunch_slots["IP2"])
+            - set(bunch_slots["IP1"])
+            - set(bunch_slots["B1"])
+            - set(bunch_slots["B2"])
+        ),
+
         # IP2, B1 and B2 almost never appear individually in ion runs
         # ---> Run 7080 isolated bunches: IP2=3, B1=3, B2=0
         #      IP2 and B1 and B2 = 125
@@ -272,3 +292,23 @@ def get_bunch_counts(
             - set(bunch_slots["IP1"])
         )
     }
+
+
+
+def get_bunch_subset_count(
+    bunch_slots: dict,
+    include: tuple = (),
+    exclude: tuple = ()
+):
+    if not include:
+        return 0
+
+    result = set(bunch_slots[include[0]])
+    for key in include[1:]:
+        result &= set(bunch_slots[key])
+
+    for key in exclude:
+        if key in bunch_slots:
+            result -= set(bunch_slots[key])
+
+    return len(result)

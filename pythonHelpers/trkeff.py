@@ -73,7 +73,10 @@ def mc_track_crossed_fiducial_area(
     y_range: tuple = (18., 49.)
 ) -> bool:
     for mctrack in entry.MCTrack:
-        if mctrack.GetMotherId()==-1:
+        if (
+            mctrack.GetMotherId()==-1 and
+            abs(mctrack.GetPdgCode()) == 13
+        ):
             mcTrkZref = pythonHelpers.general.get_point_at_z(mctrack, z_ref)
             if (
                 x_range[0] <= mcTrkZref.X() <= x_range[1] and

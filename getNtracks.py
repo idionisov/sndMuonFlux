@@ -3,6 +3,7 @@ import os
 
 import ROOT
 
+import pythonHelpers.bunch_struct
 import pythonHelpers.general
 import pythonHelpers.nTracks
 
@@ -27,8 +28,9 @@ def get_nTracks_pipeline(args):
     print(outfile_root)
     print(outfile_csv)
 
-    run  = pythonHelpers.general.get_snd_run(args.input_files)
-    fill = pythonHelpers.general.get_lhc_fill(args.input_files)
+    # run  = pythonHelpers.general.get_snd_run(args.input_files)
+    # fill = pythonHelpers.general.get_lhc_fill(args.input_files)
+    _, run, fill, acc_mode = pythonHelpers.general.load_run_info(args.input_files)
 
     vec = ROOT.getNTracks(
         args.input_files,
@@ -36,14 +38,53 @@ def get_nTracks_pipeline(args):
         *args.xz_range, *args.yz_range,
         *args.z_ref
     )
-    counts = pythonHelpers.nTracks.get_track_counts(vec, "IP1")
-    counts.update({
+    bunches = ("IP1", "IP2", "B1Only", "B2noB1", "IP2B1B2")
+    counts = {
+        b: pythonHelpers.nTracks.get_track_counts(vec, b) for b in bunches
+    }
+    output = counts.copy()
+    output.update({
         "Run": run, "Fill": fill, "scale": args.scale
     })
-    print(counts)
+    for b in bunches:
+        suffix = f"_{b}" if b != "IP1" else ""
+        for tt, ntrks in output[b].items():
+            output.update({f"nTracks{tt}{suffix}": ntrks})
 
-    pythonHelpers.nTracks.write_output(outfile_root, run, fill, counts, args.scale)
-    pythonHelpers.nTracks.write_output(outfile_csv,  run, fill, counts, args.scale)
+    if args.bunch_correction:
+        bunch_slots = pythonHelpers.bunch_struct.extract_bunch_struct(
+            args.input_files,
+        )
+
+        if acc_mode==11: # Protons
+            N_IP1_and_B1 = pythonHelpers.bunch_struct.get_bunch_subset_count(bunch_slots, include=("IP1", "B1"))
+            N_B1Only = pythonHelpers.bunch_struct.get_bunch_subset_count(bunch_slots, include=("B1",), exclude=("IP1", "IP2", "B2"))
+            N_IP1_and_B2 = pythonHelpers.bunch_struct.get_bunch_subset_count(bunch_slots, include=("IP1", "B2"))
+            N_B2noB1 = pythonHelpers.bunch_struct.get_bunch_subset_count(bunch_slots, include=("B2",), exclude=("IP1", "IP2", "B1"))
+            N_IP1_and_IP2 = pythonHelpers.bunch_struct.get_bunch_subset_count(bunch_slots, include=("IP1", "IP2"))
+            N_IP2Only = pythonHelpers.bunch_struct.get_bunch_subset_count(bunch_slots, include=("IP2",), exclude=("IP1", "B1", "B2"))
+
+
+            for tt, total_counts in counts["IP1"].items():
+                if N_B1Only>0:
+                    output["B1Only"][tt] *= (N_IP1_and_B1 / N_B1Only)
+                if N_B2noB1>0:
+                    output["B2noB1"][tt] *= (N_IP1_and_B2 / N_B2noB1)
+                if N_IP2Only > 0:
+                    output["IP2"][tt] *= (N_IP1_and_IP2 / N_IP2Only)
+
+        elif acc_mode==12: # Heavy-Ions
+            N_IP1_and_IP2_and_B1_and_B2 = pythonHelpers.bunch_struct.get_bunch_subset_count(bunch_slots, include=("IP1", "IP2", "B1", "B2"), exclude=())
+            N_IP2_and_B1_and_B2 = pythonHelpers.bunch_struct.get_bunch_subset_count(bunch_slots, include=("IP2", "B1", "B2"), exclude=("IP1",))
+
+
+            for tt, total_counts in counts:
+                output["IP2B1B2"] *= (N_IP1_and_IP2_and_B1_and_B2 / N_IP2_and_B1_and_B2)
+
+    print(output)
+
+#    pythonHelpers.nTracks.write_output(outfile_root, run, fill, output, args.scale)
+    pythonHelpers.nTracks.write_output(outfile_csv,  run, fill, output, args.scale)
 
 
 
@@ -59,6 +100,7 @@ if __name__ == "__main__":
     parser.add_argument('-xz', '--xz-range', nargs=2, type=float, default=[-1e12, 1e12], help="Allowed track angle in XZ plane [xzMin, xzMax] in mrad. Tracks outside this range are ignored.")
     parser.add_argument('-yz', '--yz-range', nargs=2, type=float, default=[-1e12, 1e12], help="Allowed track angle in YZ plane [yzMin, yzMax] in mrad. Tracks outside this range are ignored.")
     parser.add_argument('-sc', '--scale', type=int, default=1, help="Scaling used for track reconstruction")
+    parser.add_argument('--bunch-correction', action='store_true', help="Whether to apply bunch structure correction to the track count.")
 
     args = parser.parse_args()
 

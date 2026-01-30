@@ -369,7 +369,6 @@ def get_muon_flux_mc(
                 xy["min"]["y"] <= y <= xy["max"]["y"]
             ):
                 continue
-
             reco_track_types.add(tt)
 
         for tt in reco_track_types:
