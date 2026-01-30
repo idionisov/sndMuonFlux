@@ -38,22 +38,25 @@ def get_nTracks_pipeline(args):
         *args.xz_range, *args.yz_range,
         *args.z_ref
     )
-    counts = pythonHelpers.nTracks.get_track_counts(vec, "IP1")
-    counts.update({
+    bunches = ("IP1", "IP2", "B1Only", "B2noB1", "IP2B1B2")
+    counts = {
+        b: pythonHelpers.nTracks.get_track_counts(vec, b) for b in bunches
+    }
+    output = counts.copy()
+    output.update({
         "Run": run, "Fill": fill, "scale": args.scale
     })
+    for b in bunches:
+        suffix = f"_{b}" if b != "IP1" else ""
+        for tt, ntrks in output[b].items():
+            output.update({f"nTracks{tt}{suffix}": ntrks})
 
     if args.bunch_correction:
-        mu_non_ip1 = {}
         bunch_slots = pythonHelpers.bunch_struct.extract_bunch_struct(
             args.input_files,
         )
 
         if acc_mode==11: # Protons
-            N_mu_ip2_dict = pythonHelpers.nTracks.get_track_counts(vec, "IP2")
-            N_mu_b1_only_dict  = pythonHelpers.nTracks.get_track_counts(vec, "B1Only")
-            N_mu_b2nob1_dict  = pythonHelpers.nTracks.get_track_counts(vec, "B2noB1")
-
             N_IP1_and_B1 = pythonHelpers.bunch_struct.get_bunch_subset_count(bunch_slots, include=("IP1", "B1"))
             N_B1Only = pythonHelpers.bunch_struct.get_bunch_subset_count(bunch_slots, include=("B1",), exclude=("IP1", "IP2", "B2"))
             N_IP1_and_B2 = pythonHelpers.bunch_struct.get_bunch_subset_count(bunch_slots, include=("IP1", "B2"))
@@ -62,46 +65,26 @@ def get_nTracks_pipeline(args):
             N_IP2Only = pythonHelpers.bunch_struct.get_bunch_subset_count(bunch_slots, include=("IP2",), exclude=("IP1", "B1", "B2"))
 
 
-            print(N_mu_ip2_dict)
-            print(N_mu_b1_only_dict)
-            print(N_mu_b2nob1_dict)
-            print(N_IP1_and_B1)
-            print(N_B1Only)
-            print(N_IP1_and_B2)
-            print(N_B2noB1)
-            print(N_IP1_and_IP2)
-            print(N_IP2Only)
+            for tt, total_counts in counts["IP1"].items():
+                if N_B1Only>0:
+                    output["B1Only"][tt] *= (N_IP1_and_B1 / N_B1Only)
+                if N_B2noB1>0:
+                    output["B2noB1"][tt] *= (N_IP1_and_B2 / N_B2noB1)
+                if N_IP2Only > 0:
+                    output["IP2"][tt] *= (N_IP1_and_IP2 / N_IP2Only)
 
-            print("Bunch structure corrections (% of all tracks):")
-            for tt, total_counts in counts.items():
-                N_mu_b1 = N_mu_b1_only_dict[tt] * (N_IP1_and_B1 / N_B1Only) if N_B1Only>0 else 0
-                N_mu_b2nob1 = N_mu_b2nob1_dict[tt] * (N_IP1_and_B2 / N_B2noB1) if N_B2noB1>0 else 0
-                N_mu_ip2 = N_mu_ip2_dict[tt] * (N_IP1_and_IP2 / N_IP2Only) if N_IP2Only>0 else 0
-                N_mu_all = N_mu_b1 + N_mu_b2nob1 + N_mu_ip2
-
-                print(f" === Track type {tt} ===")
-                print(f"  >> B1:     [{N_mu_b1*100/total_counts:.02f} %]")
-                print(f"  >> B2:     [{N_mu_b1*100/total_counts:.02f} %]")
-                print(f"  >> IP2:    [{N_mu_b1*100/total_counts:.02f} %]")
-                print(f"\033[1m  >> Total:  [{N_mu_all*100/total_counts:.02f} %]\033[0m")
         elif acc_mode==12: # Heavy-Ions
-            N_mu_ip2b1b2_dict = pythonHelpers.nTracks.get_track_counts(vec, "IP2B1B2")
             N_IP1_and_IP2_and_B1_and_B2 = pythonHelpers.bunch_struct.get_bunch_subset_count(bunch_slots, include=("IP1", "IP2", "B1", "B2"), exclude=())
             N_IP2_and_B1_and_B2 = pythonHelpers.bunch_struct.get_bunch_subset_count(bunch_slots, include=("IP2", "B1", "B2"), exclude=("IP1",))
 
 
-            print("Bunch structure corrections (% of all tracks):")
             for tt, total_counts in counts:
-                N_mu_ip2b1b2 = N_mu_ip2b1b2_dict[tt] * (N_IP1_and_IP2_and_B1_and_B2 / N_IP2_and_B1_and_B2)
+                output["IP2B1B2"] *= (N_IP1_and_IP2_and_B1_and_B2 / N_IP2_and_B1_and_B2)
 
-                print(f" === Track type {tt} ===")
-                print(f"\033[1m  >> Total:  [{N_mu_ip2b1b2*100/total_counts:.02f} %]\033[0m")
+    print(output)
 
-
-    print(counts)
-
-    pythonHelpers.nTracks.write_output(outfile_root, run, fill, counts, args.scale)
-    pythonHelpers.nTracks.write_output(outfile_csv,  run, fill, counts, args.scale)
+#    pythonHelpers.nTracks.write_output(outfile_root, run, fill, output, args.scale)
+    pythonHelpers.nTracks.write_output(outfile_csv,  run, fill, output, args.scale)
 
 
 

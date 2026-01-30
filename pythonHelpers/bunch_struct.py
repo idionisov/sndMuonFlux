@@ -157,7 +157,7 @@ def extract_bunch_struct(
         progress = (i_event * 100) // n_break
         if progress >= next_print:
             print(f"{progress:.0f} %")
-            next_print += 5
+            next_print += 20
 
         # Breakpoint to prevent looping through too many events
         if i_event >= n_break:

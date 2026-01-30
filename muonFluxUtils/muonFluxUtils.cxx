@@ -26,31 +26,68 @@ bool hasBranch(
 
 
 
+//TChain* loadChainWithFallback(const TString& inputStr)
+//{
+//    std::vector<TString> trees;
+//    trees.push_back("cbmsim");
+//    trees.push_back("rawConv");
+//
+//    for (const auto& t : trees) {
+//        TChain* ch = new TChain(t);
+//        long nAdded = ch->Add(inputStr);
+//        if (nAdded == 0) {
+//            delete ch;
+//            continue;
+//        }
+//
+//        long nEntries = ch->GetEntries();
+//        if (nEntries > 0) {
+//            std::cout << "Successfully loaded tree '" << t
+//                      << "' with " << nEntries << " entries." << std::endl;
+//            return ch;
+//        }
+//
+//        std::cout << "No entries in tree '" << t << "'; trying next." << std::endl;
+//        delete ch;
+//    }
+//
+//    return nullptr;
+//}
 TChain* loadChainWithFallback(const TString& inputStr)
 {
-    std::vector<TString> trees;
-    trees.push_back("cbmsim");
-    trees.push_back("rawConv");
+    TChain dummyChain("dummy");
+    long nFiles = dummyChain.Add(inputStr);
+    
+    if (nFiles == 0) return nullptr;
 
-    for (const auto& t : trees) {
-        TChain* ch = new TChain(t);
-        long nAdded = ch->Add(inputStr);
-        if (nAdded == 0) {
-            delete ch;
-            continue;
-        }
-
-        long nEntries = ch->GetEntries();
-        if (nEntries > 0) {
-            std::cout << "Successfully loaded tree '" << t
-                      << "' with " << nEntries << " entries." << std::endl;
-            return ch;
-        }
-
-        std::cout << "No entries in tree '" << t << "'; trying next." << std::endl;
-        delete ch;
+    const char* firstFileName = dummyChain.GetListOfFiles()->At(0)->GetTitle();
+    TFile* f = TFile::Open(firstFileName);
+    if (!f || f->IsZombie()) {
+        std::cout << "Error: Could not open representative file " << firstFileName << std::endl;
+        if (f) delete f;
+        return nullptr;
     }
 
+    TString foundTree = "";
+    std::vector<TString> trees = {"cbmsim", "rawConv"};
+
+    for (const auto& t : trees) {
+        if (f->GetListOfKeys()->FindObject(t)) {
+            foundTree = t;
+            break; 
+        }
+    }
+    delete f;
+
+    if (foundTree.Length() > 0) {
+        TChain* ch = new TChain(foundTree);
+        ch->Add(inputStr);
+        
+        std::cout << "Successfully loaded tree '" << foundTree << "'" << std::endl;
+        return ch;
+    }
+
+    std::cout << "No valid tree found in files." << std::endl;
     return nullptr;
 }
 

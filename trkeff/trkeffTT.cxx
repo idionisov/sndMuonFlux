@@ -28,7 +28,7 @@
 
 
 
-std::vector<double> computeTrackingEfficiencies(
+std::vector<double> computeTrackingEfficiencies_TT(
     TString inputStr,
     TString geoFile,
     TString outFileName,
@@ -134,18 +134,29 @@ std::vector<double> computeTrackingEfficiencies(
     // ----------------------------
     std::cout << "Starting event loop..." << std::endl;
     int lastStatusPercentage = -1;
+    int nextTrigger1 = nEntries / 20;
+    int nextTrigger2 = nBreak / 20;
     double weight = 1.0;
+    int tagTrackCount = 0;
     for (unsigned long i_entry = 0; i_entry < nEntries; ++i_entry) {
-        if (i_entry==nBreak) break;
+        if (tagTrackCount >= nBreak) break;
 
         // Print status every 5%
-        int currentStatusPercentage = i_entry*100 / nBreak;
-        if (currentStatusPercentage % 5 == 0 && currentStatusPercentage != lastStatusPercentage){
-            std::cout << currentStatusPercentage << " %" << std::endl;
-            lastStatusPercentage = currentStatusPercentage;
+    if (i_entry >= nextTrigger1 || tagTrackCount >= nextTrigger2) {
+        int p1 = (i_entry * 100) / nEntries;
+        int p2 = (tagTrackCount * 100) / nBreak;
+        int current = std::max(p1, p2);
+        
+        if (current >= lastStatusPercentage + 5) {
+            lastStatusPercentage = (current / 5) * 5; 
+            std::cout << lastStatusPercentage << " %" << std::endl;
         }
+
+        nextTrigger1 = ((lastStatusPercentage + 5) * nEntries) / 100;
+        nextTrigger2 = ((lastStatusPercentage + 5) * nBreak) / 100;
+    }
         ch->GetEntry(i_entry);
-        if (!eventHeader->isIP1()) continue;
+//        if (!eventHeader->isIP1()) continue;
 
         if (isMC) {
             weight = dynamic_cast<ShipMCTrack*>(mcTracks->At(0))->GetWeight();
@@ -187,13 +198,14 @@ std::vector<double> computeTrackingEfficiencies(
                 }
                 else continue;
 
+
                 getHist2D("x.y", i_candTrackType, false)->Fill(xTag, yTag, weight);
                 getHist1D("x",   i_candTrackType, false)->Fill(xTag, weight);
                 getHist1D("y",   i_candTrackType, false)->Fill(yTag, weight);
 
                 double chi2ndf = tagTrack->getChi2Ndf();
                 if (trackIsWithinArea(tagTrack, zRef.at(i_candTrackType), xmin, xmax, ymin, ymax)) {
-
+                    tagTrackCount += 1;
 
                     getHist1D("chi2ndf",   i_candTrackType, false)->Fill(chi2ndf, weight);
 
@@ -338,7 +350,7 @@ int main(int argc, char** argv)
     long nBreak              = atol(argv[19]);
     TString histParamsFile      = argv[20];
 
-    auto effResults = computeTrackingEfficiencies(
+    auto effResults = computeTrackingEfficiencies_TT(
         inputStr, geoFile, outFileName, histParamsFile,
         xmin, xmax, ymin, ymax, xzMin, xzMax, yzMin, yzMax,
         zRef1, zRef11, zRef3, zRef13, vetoBarDistance,
