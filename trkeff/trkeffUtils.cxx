@@ -243,3 +243,147 @@ std::array<int, 4> getNdsHits(TClonesArray* mfHits){
     }
     return hitCounts;
 }
+
+
+bool thereIsAMuon(TClonesArray* shipMCTracks) {
+    if (!shipMCTracks) return false;
+
+    for (unsigned i = 0; i < shipMCTracks->GetEntries(); ++i) {
+        ShipMCTrack* mcTrack = (ShipMCTrack*) shipMCTracks->At(i);
+        if (std::abs(mcTrack->GetPdgCode()) == 13) {
+            return true;
+        }
+    }
+    return false;
+}
+
+bool shipMCTracksCrossedFiducialArea(
+    TClonesArray* shipMCTracks,
+    double z_ref = 430.0,
+    double xmin = -42.0,
+    double xmax = -10.0,
+    double ymin =  18.0,
+    double ymax =  49.0
+) {
+    if (!shipMCTracks) return false;
+
+    for (unsigned i = 0; i < shipMCTracks->GetEntries(); ++i) {
+        ShipMCTrack* mctrack = (ShipMCTrack*) shipMCTracks->At(i);
+
+        if (mctrack->GetMotherId() == -1 && std::abs(mctrack->GetPdgCode()) == 13) {
+
+            TVector3 mcTrkZref = mctrack.GetPointAtZ(z_ref);
+
+            if (
+                mcTrkZref.X() >= xmin &&
+                mcTrkZref.X() <= xmax &&
+                mcTrkZref.Y() >= ymin &&
+                mcTrkZref.Y() <= ymax
+            ) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+
+bool sfTrackIsReconstructible(
+    TClonesArray* sfHits,
+    TClonesArray* sndRecoTracks,
+    TClonesArray* scifiPoints
+) {
+    if (!scifiPoints) return false;
+
+    // Use maps to count hits per station (keys 1-5)
+    std::map<int, int> nMCPoints_h;
+    std::map<int, int> nMCPoints_v;
+
+    // Initialize maps
+    for(unsigned i=1; i<=5; ++i) { nMCPoints_h[i]=0; nMCPoints_v[i]=0; }
+
+    for (int i = 0; i < scifiPoints->GetEntries(); ++i) {
+        ScifiPoint* mcPoint = (ScifiPoint*) scifiPoints->At(i);
+
+        if ( !(std::abs(mcPoint->GetPdgCode()) == 13 && mcPoint->GetTrackID() == 0) ) {
+            continue;
+        }
+
+        int detID = mcPoint->GetDetectorID();
+
+        // Station is the digit at 1,000,000 position
+        int station = detID / 1000000;
+
+        // Plane type logic: (detID / 100000) % 2
+        // 0 = Horizontal, 1 = Vertical
+        int planeType = (detID / 100000) % 2;
+
+        if (planeType == 0) {
+            nMCPoints_h[station]++;
+        } else if (planeType == 1) {
+            nMCPoints_v[station]++;
+        }
+    }
+
+    int nScifiPoints_h = 0;
+    int nScifiPoints_v = 0;
+
+    // Count stations with hits
+    for (int sfPlane = 1; sfPlane <= 5; ++sfPlane) {
+        if (nMCPoints_v[sfPlane] > 0) nScifiPoints_v++;
+        if (nMCPoints_h[sfPlane] > 0) nScifiPoints_h++;
+    }
+
+    return (nScifiPoints_h >= 3 && nScifiPoints_v >= 3);
+}
+
+bool dsTrackIsReconstructible(
+    TClonesArray* mfHits,
+    TClonesArray* sndRecoTracks,
+    TClonesArray* muFilterPoints
+) {
+    if (!muFilterPoints) return false;
+
+    std::map<int, int> nMCPoints_h;
+    std::map<int, int> nMCPoints_v;
+
+    // Initialize for stations 1 to 4
+    for(unsigned i=1; i<=4; ++i) { nMCPoints_h[i]=0; nMCPoints_v[i]=0; }
+
+    for (unsigned i = 0; i < muFilterPoints->GetEntries(); ++i) {
+        MuFilterPoint* mcPoint = (MuFilterPoint*) muFilterPoints->At(i);
+
+        if (std::abs(mcPoint->GetPdgCode()) == 13 && mcPoint->GetTrackID() == 0) {
+            int detID = mcPoint->GetDetectorID();
+
+            // Check ID range for Downstream
+            if (detID < 30000 || detID > 34999) continue;
+
+            // Extract Station and BarNum
+            // Using standard string conversion
+            std::string detStr = std::to_string(detID);
+
+            // station = int(str(detID)[1])+1
+            // detStr[1] is the char at index 1. Subtract '0' to convert char to int.
+            // barNum = int(str(detID)[-3:])
+            int station = (detStr[1] - '0') + 1;
+            int barNum = std::stoi(detStr.substr(detStr.length() - 3));
+
+            if (barNum > 59) {
+                nMCPoints_v[station]++;
+            } else {
+                nMCPoints_h[station]++;
+            }
+        }
+    }
+
+    int nDSPoints_h = 0;
+    int nDSPoints_v = 0;
+
+    for (int dsPlane = 1; dsPlane <= 4; ++dsPlane) {
+        if (nMCPoints_v[dsPlane] > 0) nDSPoints_v++;
+        if (nMCPoints_h[dsPlane] > 0) nDSPoints_h++;
+    }
+
+    return (nDSPoints_h >= 3 && nDSPoints_v >= 3);
+}

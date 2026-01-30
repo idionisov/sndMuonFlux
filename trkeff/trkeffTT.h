@@ -1,7 +1,6 @@
 #include "trkeffUtils.h"
 
-// EffResults computeTrackingEfficiencies(const TrkeffConfig& cfg);
-std::vector<double> computeTrackingEfficiencies(
+std::vector<double> computeTrackingEfficienciesTT(
     TString inputStr,
     TString geoFile,
     TString outFileName,

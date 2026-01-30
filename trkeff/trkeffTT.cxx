@@ -52,8 +52,6 @@ std::vector<double> computeTrackingEfficiencies(
 ) {
 
     std::vector<double> results = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
-    auto startTime = std::chrono::steady_clock::now();
-
     std::vector<double> zRef = {zRef1, zRef11, zRef3, zRef13};
 
     // ----------------------------
@@ -338,7 +336,7 @@ int main(int argc, char** argv)
     long nBreak              = atol(argv[19]);
     TString histParamsFile      = argv[20];
 
-    auto effResults = computeTrackingEfficiencies(
+    std::vector<double> = computeTrackingEfficienciesTT(
         inputStr, geoFile, outFileName, histParamsFile,
         xmin, xmax, ymin, ymax, xzMin, xzMax, yzMin, yzMax,
         zRef1, zRef11, zRef3, zRef13, vetoBarDistance,

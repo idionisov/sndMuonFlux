@@ -5,6 +5,7 @@
 #include "TEfficiency.h"
 #include "sndRecoTrack.h"
 #include "TH2.h"
+#include "TClonesArray.h"
 
 extern const std::map<int, int> oppositeTrackType;
 using EffPair = std::pair<double,double>;     // (efficiency, error)
@@ -48,3 +49,22 @@ struct TrkeffConfig {
     double scifiToDSTrackDistance;
     long nBreak;
 };
+
+bool thereIsAMuon(TClonesArray* shipMCTracks);
+
+bool shipMCTrackCrossesFiducialArea(
+    TClonesArray* shipMCTracks,
+    double z_ref, double xmin, double xmax, double ymin, double ymax
+);
+
+bool sfTrackIsReconstructible(
+    TClonesArray* sfHits,
+    TClonesArray* sndRecoTracks,
+    TClonesArray* scifiPoints
+);
+
+bool dsTrackIsReconstructible(
+    TClonesArray* mfHits,
+    TClonesArray* sndRecoTracks,
+    TClonesArray* muFilterPoints
+);

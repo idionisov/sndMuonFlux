@@ -1,10 +1,13 @@
 import glob
 import re
+from datetime import datetime, timezone
 from typing import Union
 
+import FillingScheme as FS
 import ROOT
 
 import pythonHelpers.general
+from pythonHelpers.filling_scheme import get_bunch_slots
 
 
 def get_bunch_spacing(
@@ -57,8 +60,10 @@ def get_bunch_spacing(
 
 
 
-def get_bunch_slots(
-    arg: Union[int, str, None] = None
+def get_slot_numbers(
+    arg: Union[int, str, None] = None,
+    harmonic_number: int = 35640,
+    bucket_spacing: float = 2.5
 ) -> int:
     """
     Extract the bunch spacing for
@@ -75,7 +80,7 @@ def get_bunch_slots(
     # For ions it is S=20 to get 20*2.5=50 ns
     # Number of slots are N = (h / nominal_spacing * S)
     bunch_spacing = get_bunch_spacing(arg)
-    return int(35640*2.5/bunch_spacing)
+    return int(harmonic_number * bucket_spacing / bunch_spacing)
 
 
 def extract_bunch_struct(
@@ -93,7 +98,7 @@ def extract_bunch_struct(
     run = ch.EventHeader.GetRunId()
     fill = ch.EventHeader.GetFillNumber()
     acc_mode = ch.EventHeader.GetAccMode()
-    bunch_slots = get_bunch_slots(acc_mode)
+    bunch_slots = get_slot_numbers(acc_mode)
 
     if fout:
         fout = ROOT.TFile(fout, "update")
@@ -243,59 +248,47 @@ def extract_bunch_struct(
     return b
 
 
-def get_bunch_counts(
+
+def get_bunch_slots(
     input_files: str,
-    output_file: str,
-    n_break: int = 1e7,
 ) -> dict:
-    bunch_slots = extract_bunch_struct(
-        input_files,
-        output_file,
-        n_break
-    )
+    ch = pythonHelpers.general.load_snd_TChain(input_files)
+    fill = ch.EventHeader.GetFillNumber()
+    run = ch.EventHeader.GetRunId()
+    ch.GetEntry(0)
+
+    ts = ch.EventHeader.GetUTCtimestamp()
+    ts_date = datetime.fromtimestamp(ts, tz=timezone.utc)
+    year = ts_date.year
+
+    eos_prefix = os.environ['EOSSHIP']
+    raw_data_path = f"{eos_prefix}/eos/experiment/sndlhc/raw_data/physics/{year}"
+    www_path = f"{eos_prefix}/eos/experiment/sndlhc/www/"
+
+    options = FSOptions(raw_data_path=raw_data_path, www_path=www_path)
+    config = year_configs.get(year)
+    if config:
+        options.rmin = config["rmin"]
+
+        run_suffix = ""
+        if config["has_run_subfolder"]:
+            idx = options.rawData.find("run_")
+            run_suffix = options.rawData[idx:] if idx != -1 else ""
+
+        options.convpath = f"/eos/experiment/sndlhc/convertedData/physics/{year}/{run_suffix}"
+
+    filling_scheme = FS.fillingScheme()
+    filling_scheme.Init(options)
+
+    bunch_slots = filling_scheme.getBunchStructureDict(fill)
+    if not bunch_slots:
+        print(f"Could not retrieve bunch dictionary for run {run} (fill {fill}).")
+        return None
+
+    return bunch_slots
 
 
-    return {
-        'IP1': len(bunch_slots["IP1"]),
-        'IP2': len(bunch_slots["IP2"]),
-        'B1': len(bunch_slots["B1"]),
-        'B2': len(bunch_slots["B2"]),
-
-        # Bunches in isolation
-        'B1Only': len(
-            set(bunch_slots["B1"])
-            - set(bunch_slots["IP1"])
-            - set(bunch_slots["IP2"])
-            - set(bunch_slots["B2"])
-        ),
-        'B2noB1': len(
-            set(bunch_slots["B2"])
-            - set(bunch_slots["IP1"])
-            - set(bunch_slots["IP2"])
-            - set(bunch_slots["B1"])
-        ),
-        'IP2Only': len(
-            set(bunch_slots["IP2"])
-            - set(bunch_slots["IP1"])
-            - set(bunch_slots["B1"])
-            - set(bunch_slots["B2"])
-        ),
-
-        # IP2, B1 and B2 almost never appear individually in ion runs
-        # ---> Run 7080 isolated bunches: IP2=3, B1=3, B2=0
-        #      IP2 and B1 and B2 = 125
-        # Since they're always together their contributions to non-IP1 muons are added together
-        'IP2&B1&B2': len(
-            set(bunch_slots["B2"])
-            & set(bunch_slots["B1"])
-            & set(bunch_slots["B2"])
-            - set(bunch_slots["IP1"])
-        )
-    }
-
-
-
-def get_bunch_subset_count(
+def get_bunch_counts(
     bunch_slots: dict,
     include: tuple = (),
     exclude: tuple = ()
