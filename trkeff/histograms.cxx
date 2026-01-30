@@ -34,12 +34,12 @@ HistPair createXYHists(
         TString nameTotal  = TString::Format("h_x.y_%d_%d_total", trackType, run);
         TString titleTotal = TString::Format("Total %d %d;x (cm);y (cm)", trackType, run);
 
-        histsPassed->Add(
-            new TH2D(namePassed, titlePassed, nBinsX, minX, maxX, nBinsY, minY, maxY)
-        );
-        histsTotal->Add(
-            new TH2D(nameTotal, titleTotal, nBinsX, minX, maxX, nBinsY, minY, maxY)
-        );
+        auto hP = new TH2D(namePassed, titlePassed, nBinsX, minX, maxX, nBinsY, minY, maxY);
+        histsPassed->Add(hP);
+
+        auto hT = (TH2D*)hP->Clone(nameTotal);
+        hT->SetTitle(titleTotal);
+        histsTotal->Add(hT);
     }
 
     return {histsPassed, histsTotal};
@@ -65,12 +65,12 @@ HistPair createXHists(
         TString nameTotal  = TString::Format("h1d_x_%d_%d_total", trackType, run);
         TString titleTotal = TString::Format("Total %d %d;x (cm);", trackType, run);
 
-        histsPassed->Add(
-            new TH1D(namePassed, titlePassed, nBinsX, minX, maxX)
-        );
-        histsTotal->Add(
-            new TH1D(nameTotal, titleTotal, nBinsX, minX, maxX)
-        );
+        auto hP = new TH1D(namePassed, titlePassed, nBinsX, minX, maxX);
+        histsPassed->Add(hP);
+        
+        auto hT = (TH1D*)hP->Clone(nameTotal);
+        hT->SetTitle(titleTotal);
+        histsTotal->Add(hT);
     }
 
     return {histsPassed, histsTotal};
@@ -97,12 +97,12 @@ HistPair createXHists(
         TString nameTotal  = TString::Format("h1d_y_%d_%d_total", trackType, run);
         TString titleTotal = TString::Format("Total %d %d;y (cm);", trackType, run);
 
-        histsPassed->Add(
-            new TH1D(namePassed, titlePassed, nBinsY, minY, maxY)
-        );
-        histsTotal->Add(
-            new TH1D(nameTotal, titleTotal, nBinsY, minY, maxY)
-        );
+        auto hP = new TH1D(namePassed, titlePassed, nBinsY, minY, maxY);
+        histsPassed->Add(hP);
+
+        auto hT = (TH1D*)hP->Clone(nameTotal);
+        hT->SetTitle(titleTotal);
+        histsTotal->Add(hT);
     }
 
     return {histsPassed, histsTotal};
@@ -145,12 +145,12 @@ HistPair createNhitsAllHists(
             titleTotal = TString::Format("Total %d %d;#N_{dsHitsAll};", trackType, run);
         }
 
-        histsPassed->Add(
-            new TH1D(namePassed, titlePassed, nBinsN, minN, maxN)
-        );
-        histsTotal->Add(
-            new TH1D(nameTotal, titleTotal, nBinsN, minN, maxN)
-        );
+        auto hP = new TH1D(namePassed, titlePassed, nBinsN, minN, maxN);
+        histsPassed->Add(hP);
+
+        auto hT = (TH1D*)hP->Clone(nameTotal);
+        hT->SetTitle(titleTotal);
+        histsTotal->Add(hT);
     }
 
     return {histsPassed, histsTotal};
@@ -190,12 +190,12 @@ HistPair createNhitsPlaneHists(
             titleTotal = TString::Format("Total %d %d;#N_{dsHitsPlane};", trackType, run);
         }
 
-        histsPassed->Add(
-            new TH1D(namePassed, titlePassed, nBinsN, minN, maxN)
-        );
-        histsTotal->Add(
-            new TH1D(nameTotal, titleTotal, nBinsN, minN, maxN)
-        );
+        auto hP = new TH1D(namePassed, titlePassed, nBinsN, minN, maxN);
+        histsPassed->Add(hP);
+
+        auto hT = (TH1D*)hP->Clone(nameTotal);
+        hT->SetTitle(titleTotal);
+        histsTotal->Add(hT);
     }
 
     return {histsPassed, histsTotal};
@@ -233,19 +233,19 @@ HistPair createXvsNhitsAllHists(
             minN = hParams.GetValue("N.hits.ds.all.min", 0);
             maxN = hParams.GetValue("N.hits.ds.all.max", 80);
 
-            namePassed  = TString::Format("h2d_x.NdsHitsAll%d_%d_passed", trackType, run);
+            namePassed  = TString::Format("h2d_x.NdsHitsAll_%d_%d_passed", trackType, run);
             titlePassed = TString::Format("Passed %d %d;x(cm);#N_{dsHitsAll};", trackType, run);
 
             nameTotal  = TString::Format("h2d_x.NdsHitsAll_%d_%d_total", trackType, run);
             titleTotal = TString::Format("Total %d %d;x (cm);#N_{dsHitsAll};", trackType, run);
         }
 
-        histsPassed->Add(
-            new TH2D(namePassed, titlePassed, nBinsX, minX, maxX, nBinsN, minN, maxN)
-        );
-        histsTotal->Add(
-            new TH2D(nameTotal, titleTotal, nBinsX, minX, maxX, nBinsN, minN, maxN)
-        );
+        auto hP = new TH2D(namePassed, titlePassed, nBinsX, minX, maxX, nBinsN, minN, maxN);
+        histsPassed->Add(hP);
+
+        auto hT = (TH2D*)hP->Clone(nameTotal);
+        hT->SetTitle(titleTotal);
+        histsTotal->Add(hT);
     }
 
     return {histsPassed, histsTotal};
@@ -290,12 +290,12 @@ HistPair createXvsNhitsPlaneHists(
             titleTotal = TString::Format("Total %d %d;x (cm);#N_{dsHitsPlane};", trackType, run);
         }
 
-        histsPassed->Add(
-            new TH2D(namePassed, titlePassed, nBinsX, minX, maxX, nBinsN, minN, maxN)
-        );
-        histsTotal->Add(
-            new TH2D(nameTotal, titleTotal, nBinsX, minX, maxX, nBinsN, minN, maxN)
-        );
+        auto hP = new TH2D(namePassed, titlePassed, nBinsX, minX, maxX, nBinsN, minN, maxN);
+        histsPassed->Add(hP);
+
+        auto hT = (TH2D*)hP->Clone(nameTotal);
+        hT->SetTitle(titleTotal);
+        histsTotal->Add(hT);
     }
 
     return {histsPassed, histsTotal};
@@ -339,12 +339,12 @@ HistPair createYvsNhitsAllHists(
             titleTotal = TString::Format("Total %d %d;y (cm);#N_{dsHitsAll};", trackType, run);
         }
 
-        histsPassed->Add(
-            new TH2D(namePassed, titlePassed, nBinsY, minY, maxY, nBinsN, minN, maxN)
-        );
-        histsTotal->Add(
-            new TH2D(nameTotal, titleTotal, nBinsY, minY, maxY, nBinsN, minN, maxN)
-        );
+        auto hP = new TH2D(namePassed, titlePassed, nBinsY, minY, maxY, nBinsN, minN, maxN);
+        histsPassed->Add(hP);
+
+        auto hT = (TH2D*)hP->Clone(nameTotal);
+        hT->SetTitle(titleTotal);
+        histsTotal->Add(hT);
     }
 
     return {histsPassed, histsTotal};
@@ -389,12 +389,12 @@ HistPair createYvsNhitsPlaneHists(
             titleTotal = TString::Format("Total %d %d;y (cm);#N_{dsHitsPlane};", trackType, run);
         }
 
-        histsPassed->Add(
-            new TH2D(namePassed, titlePassed, nBinsY, minY, maxY, nBinsN, minN, maxN)
-        );
-        histsTotal->Add(
-            new TH2D(nameTotal, titleTotal, nBinsY, minY, maxY, nBinsN, minN, maxN)
-        );
+        auto hP = new TH2D(namePassed, titlePassed, nBinsY, minY, maxY, nBinsN, minN, maxN);
+        histsPassed->Add(hP);
+        
+        auto hT = (TH2D*)hP->Clone(nameTotal);
+        hT->SetTitle(titleTotal);
+        histsTotal->Add(hT);
     }
 
     return {histsPassed, histsTotal};
@@ -420,12 +420,12 @@ HistPair createChi2ndfHists(
         double minChi2ndf = hParams.GetValue(TString::Format("chi2ndf.%d.min", trackType), 0);
         double maxChi2ndf = hParams.GetValue(TString::Format("chi2ndf.%d.max", trackType), 100);
 
-        histsPassed->Add(
-            new TH1D(namePassed, titlePassed, nBinsChi2ndf, minChi2ndf, maxChi2ndf)
-        );
-        histsTotal->Add(
-            new TH1D(nameTotal, titleTotal, nBinsChi2ndf, minChi2ndf, maxChi2ndf)
-        );
+        auto hP = new TH1D(namePassed, titlePassed, nBinsChi2ndf, minChi2ndf, maxChi2ndf);
+        histsPassed->Add(hP);
+
+        auto hT = (TH1D*)hP->Clone(nameTotal);
+        hT->SetTitle(titleTotal);
+        histsTotal->Add(hT);
     }
 
     return {histsPassed, histsTotal};
