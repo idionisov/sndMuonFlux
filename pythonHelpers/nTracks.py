@@ -53,7 +53,7 @@ def save_nTracks_to_csv(
                 suffix = f"_{b}" if b != "IP1" else ""
                 cols.append(f"nTracks{tt}{suffix}")
                 row[f"nTracks{tt}{suffix}"] = trkCounts
-    
+
 
     file_exists = os.path.exists(filename)
     with open(filename, 'a', newline='') as csvfile:
@@ -80,13 +80,13 @@ def save_nTracks_to_root(
 
     def _entry_to_row(tree):
         return {
-            "Run": int(getattr(tree, cols[0])),
-            "Fill": int(getattr(tree, cols[1])),
-            "scale": int(getattr(tree, cols[2])),
-            "nTracks1": int(getattr(tree, cols[3])),
-            "nTracks11": int(getattr(tree, cols[4])),
-            "nTracks3": int(getattr(tree, cols[5])),
-            "nTracks13": int(getattr(tree, cols[6]))
+            "Run": int(tree.GetLeaf(cols[0]).GetValue()),
+            "Fill": int(tree.GetLeaf(cols[1]).GetValue()),
+            "scale": int(tree.GetLeaf(cols[2]).GetValue()),
+            "nTracks1": int(tree.GetLeaf(cols[3]).GetValue()),
+            "nTracks11": int(tree.GetLeaf(cols[4]).GetValue()),
+            "nTracks3": int(tree.GetLeaf(cols[5]).GetValue()),
+            "nTracks13": int(tree.GetLeaf(cols[6]).GetValue())
         }
 
     existing_rows = []
@@ -161,7 +161,7 @@ def save_nTracks_to_root(
 #        "IP2": None,
 #        "B1": None,
 #        "B2": None,
-#        "IP2B1B2": None 
+#        "IP2B1B2": None
 #    }
 #):
 #    if not filename:
@@ -183,6 +183,7 @@ def write_output(
     fill: int,
     counts: dict,
     scale: int = 1,
+    cols: list[str] = ["Run", "Fill", "scale", "nTracks1", "nTracks11", "nTracks3", "nTracks13"],
     tree_name: str = "nTracks",
 ):
     if not filename:
@@ -193,6 +194,6 @@ def write_output(
     else:
         if not filename.endswith(".root"):
             filename += ".root"
-        save_nTracks_to_root(filename, run, fill, final_counts, scale, final_cols, tree_name)
+        save_nTracks_to_root(filename, run, fill, counts, scale, cols, tree_name)
 
     print(f"Track counts have been saved to {filename}")

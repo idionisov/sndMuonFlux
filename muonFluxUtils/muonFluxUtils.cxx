@@ -3,6 +3,9 @@
 
 #include "TChain.h"
 #include "TString.h"
+#include "SNDLHCEventHeader.h"
+#include "ShipMCTrack.h"
+#include "TClonesArray.h"
 #include <TError.h>
 #include "muonFluxUtils.h"
 #include "sndRecoTrack.h"
@@ -57,7 +60,7 @@ TChain* loadChainWithFallback(const TString& inputStr)
 {
     TChain dummyChain("dummy");
     long nFiles = dummyChain.Add(inputStr);
-    
+
     if (nFiles == 0) return nullptr;
 
     const char* firstFileName = dummyChain.GetListOfFiles()->At(0)->GetTitle();
@@ -74,7 +77,7 @@ TChain* loadChainWithFallback(const TString& inputStr)
     for (const auto& t : trees) {
         if (f->GetListOfKeys()->FindObject(t)) {
             foundTree = t;
-            break; 
+            break;
         }
     }
     delete f;
@@ -82,7 +85,7 @@ TChain* loadChainWithFallback(const TString& inputStr)
     if (foundTree.Length() > 0) {
         TChain* ch = new TChain(foundTree);
         ch->Add(inputStr);
-        
+
         std::cout << "Successfully loaded tree '" << foundTree << "'" << std::endl;
         return ch;
     }
@@ -119,6 +122,95 @@ bool trackIsWithinArea(
     TVector3 refPoint = track->getPointAtZ(zRef);
     return refPoint.X() >= xmin && refPoint.X() <= xmax &&
            refPoint.Y() >= ymin && refPoint.Y() <= ymax;
+}
+
+
+
+MCRateResult computeMCRates(
+    TString inputStr,
+    double xmin, double xmax,
+    double ymin, double ymax,
+    double zRef1, double zRef11, double zRef3, double zRef13
+) {
+    MCRateResult res;
+    std::vector<int> trackTypes = {1, 11, 3, 13, 0}; // 0 will represent "mcTrk"
+    for (int tt : trackTypes) {
+        res.nRate[tt] = 0.0;
+        res.nRateErr2[tt] = 0.0;
+    }
+
+    TChain* ch = loadChainWithFallback(inputStr);
+    if (!ch) return res;
+
+    SNDLHCEventHeader* header = new SNDLHCEventHeader();
+    TClonesArray* mcTracks = new TClonesArray("ShipMCTrack");
+    TClonesArray* recoTracks = new TClonesArray("sndRecoTrack");
+
+    ch->SetBranchAddress("EventHeader.", &header);
+    ch->SetBranchAddress("MCTrack", &mcTracks);
+    ch->SetBranchAddress("Reco_MuonTracks", &recoTracks);
+
+    std::map<int, double> zRefs = {{1, zRef1}, {11, zRef11}, {3, zRef3}, {13, zRef13}};
+
+    long nEntries = ch->GetEntries();
+    for (long i = 0; i < nEntries; ++i) {
+        ch->GetEntry(i);
+
+        if (!header->isIP1()) continue;
+
+        double w = 0.0;
+        bool hasPrimaryMuon = false;
+
+        for (int j = 0; j < mcTracks->GetEntriesFast(); ++j) {
+            ShipMCTrack* mct = (ShipMCTrack*)mcTracks->At(j);
+            if (mct->GetMotherId() == -1 && std::abs(mct->GetPdgCode()) == 13) {
+                w = mct->GetWeight();
+                hasPrimaryMuon = true;
+
+                // mcTrk calculation (fiducial at z=430)
+                double pz = mct->GetPz();
+                if (pz != 0) {
+                    double t = (430.0 - mct->GetStartZ()) / pz;
+                    double x = mct->GetStartX() + mct->GetPx() * t;
+                    double y = mct->GetStartY() + mct->GetPy() * t;
+
+                    if (x >= xmin && x <= xmax && y >= ymin && y <= ymax) {
+                        res.nRate[0] += w;
+                        res.nRateErr2[0] += w * w;
+                    }
+                }
+                break;
+            }
+        }
+
+        if (!hasPrimaryMuon) continue;
+
+        std::set<int> seenTypes;
+        for (int j = 0; j < recoTracks->GetEntriesFast(); ++j) {
+            sndRecoTrack* trk = (sndRecoTrack*)recoTracks->At(j);
+            if (!trk->getTrackFlag() || trk->getTrackMom().Z() == 0) continue;
+
+            int tt = trk->getTrackType();
+            if (zRefs.find(tt) == zRefs.end()) continue;
+
+            TVector3 pos = trk->getPointAtZ(zRefs[tt]);
+            if (pos.X() >= xmin && pos.X() <= xmax && pos.Y() >= ymin && pos.Y() <= ymax) {
+                seenTypes.insert(tt);
+            }
+        }
+
+        for (int tt : seenTypes) {
+            res.nRate[tt] += w;
+            res.nRateErr2[tt] += w * w;
+        }
+    }
+
+    // delete ch;
+    // delete eh;
+    // delete mcTracks;
+    // delete recoTracks;
+
+    return res;
 }
 
 bool trackIsWithinAngleRange(

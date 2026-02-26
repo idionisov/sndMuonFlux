@@ -59,6 +59,30 @@ def find_library(
     )
 
 
+def load_cpp_extension(lib_name: str, build_subdir: str = "") -> None:
+    """
+    Search for and load a C++ shared library into ROOT.
+    """
+    this_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    build_dir = os.path.join(this_dir, "build")
+
+    # Try standard build location
+    lib_path = os.path.join(build_dir, build_subdir, lib_name)
+
+    if not os.path.exists(lib_path):
+        print(f"WARNING: Did not find file {lib_path}")
+        print(f"WARNING: Starting recursive search in {this_dir}")
+        try:
+            lib_path = find_library(lib_name, this_dir)
+        except FileNotFoundError:
+            raise FileNotFoundError(f"Could not find required library {lib_name}")
+
+    lib_path = os.path.abspath(lib_path)
+    if ROOT.gSystem.Load(lib_path) < 0:
+        raise ImportError(f"Failed to load C++ extension: {lib_path}")
+    print(f"Successfully loaded {lib_name}")
+
+
 def compute_area(
     x_range: tuple[float, float],
         y_range: tuple[float, float]

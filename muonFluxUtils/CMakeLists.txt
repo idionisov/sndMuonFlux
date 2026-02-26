@@ -3,7 +3,10 @@ ROOT_GENERATE_DICTIONARY(muonFluxUtilsDict
     LINKDEF LinkDef.h
 )
 
-add_library(muonFluxUtils SHARED muonFluxUtils.cxx)
+add_library(muonFluxUtils SHARED
+    muonFluxUtils.cxx
+    muonFluxUtilsDict.cxx
+)
 
 target_include_directories(muonFluxUtils PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}

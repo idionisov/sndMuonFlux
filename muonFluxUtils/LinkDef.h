@@ -1,6 +1,5 @@
 #ifdef __CLING__
-#pragma link C++ class TrkeffConfig+;
-#pragma link C++ class EffResults+;
-
-#pragma link C++ function computeTrackingEfficiencies;
+#pragma link C++ struct MCRateResult+;
+#pragma link C++ function trackIsWithinAngleRange;
+#pragma link C++ function computeMCRates;
 #endif

@@ -6,6 +6,7 @@ ROOT_GENERATE_DICTIONARY(trkeffDict
 
 add_library(trkeffUtils SHARED
     trkeffTT.cxx
+    trkeffMCT.cxx
     trkeffUtils.cxx
     histograms.cxx
     trkeffDict.cxx
@@ -40,8 +41,22 @@ target_link_libraries(trkeffUtils PRIVATE
     Python3::Python
 )
 
-add_executable(getTrkeffTT trkeffTT.cxx histograms.cxx)
+add_executable(getTrkeffTT getTrkeffTT_cli.cxx)
 target_link_libraries(getTrkeffTT PRIVATE
+    ${ROOT_LIBRARIES}
+    ROOT::ROOTTPython
+    ROOT::Core
+    ROOT::Hist
+    ROOT::MathCore
+    ShipData
+    shipLHC
+    veto
+    muonFluxUtils
+    trkeffUtils
+)
+
+add_executable(getTrkeffMCT getTrkeffMCT_cli.cxx)
+target_link_libraries(getTrkeffMCT PRIVATE
     ${ROOT_LIBRARIES}
     ROOT::ROOTTPython
     ROOT::Core

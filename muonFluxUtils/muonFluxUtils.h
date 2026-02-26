@@ -22,6 +22,18 @@ bool trackIsConverged(sndRecoTrack *track);
 bool trackIsWithinArea(sndRecoTrack *track, double zRef, double xmin, double xmax, double ymin, double ymax);
 bool trackIsWithinAngleRange(sndRecoTrack *track, double xzMin, double xzMax, double yzMmin, double yzMax);
 
+struct MCRateResult {
+    std::map<int, double> nRate;
+    std::map<int, double> nRateErr2;
+};
+
+MCRateResult computeMCRates(
+    TString inputStr,
+    double xmin, double xmax,
+    double ymin, double ymax,
+    double zRef1, double zRef11, double zRef3, double zRef13
+);
+
 // void printStatusWithTime(
 //     unsigned int i, unsigned int iMax,
 //     const std::chrono::steady_clock::time_point &start_time

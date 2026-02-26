@@ -1,4 +1,5 @@
 #include "trkeffUtils.h"
+#include "TString.h"
 
 // EffResults computeTrackingEfficiencies(const TrkeffConfig& cfg);
 std::vector<double> computeTrackingEfficiencies_TT(

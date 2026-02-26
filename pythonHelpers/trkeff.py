@@ -34,18 +34,17 @@ def save_trkeff_to_csv(
     if not filename.endswith(".csv"):
         filename += ".csv"
 
-
     row = {
         "Run": run,
         "Fill": fill,
-        "trkeff1":      effs.get(1,  0)[0],
-        "trkeff11":     effs.get(11, 0)[0],
-        "trkeff3":      effs.get(3,  0)[0],
-        "trkeff13":     effs.get(13, 0)[0],
-        "trkeffErr1":   effs.get(1,  0)[1],
-        "trkeffErr11":  effs.get(11, 0)[1],
-        "trkeffErr3":   effs.get(3,  0)[1],
-        "trkeffErr13":  effs.get(13, 0)[1]
+        "trkeff1":      effs.get(1,  (0,0))[0],
+        "trkeff11":     effs.get(11, (0,0))[0],
+        "trkeff3":      effs.get(3,  (0,0))[0],
+        "trkeff13":     effs.get(13, (0,0))[0],
+        "trkeffErr1":   effs.get(1,  (0,0))[1],
+        "trkeffErr11":  effs.get(11, (0,0))[1],
+        "trkeffErr3":   effs.get(3,  (0,0))[1],
+        "trkeffErr13":  effs.get(13, (0,0))[1]
     }
 
     file_exists = os.path.exists(filename)
@@ -54,6 +53,107 @@ def save_trkeff_to_csv(
         if not file_exists:
             writer.writeheader()
         writer.writerow(row)
+
+
+def save_trkeff_to_root(
+    filename: str,
+    run: int,
+    fill: int,
+    effs: dict,
+    tree_name: str = "trkeff"
+):
+    from array import array
+    if not filename.endswith(".root"):
+        filename += ".root"
+
+    # Define columns to match CSV
+    cols = [
+        "Run", "Fill", "trkeff1", "trkeff11", "trkeff3", "trkeff13",
+        "trkeffErr1", "trkeffErr11", "trkeffErr3", "trkeffErr13"
+    ]
+
+    def _entry_to_row(tree):
+        return {
+            "Run":        int(tree.GetLeaf(cols[0]).GetValue()),
+            "Fill":       int(tree.GetLeaf(cols[1]).GetValue()),
+            "trkeff1":    float(tree.GetLeaf(cols[2]).GetValue()),
+            "trkeff11":   float(tree.GetLeaf(cols[3]).GetValue()),
+            "trkeff3":    float(tree.GetLeaf(cols[4]).GetValue()),
+            "trkeff13":   float(tree.GetLeaf(cols[5]).GetValue()),
+            "trkeffErr1": float(tree.GetLeaf(cols[6]).GetValue()),
+            "trkeffErr11":float(tree.GetLeaf(cols[7]).GetValue()),
+            "trkeffErr3": float(tree.GetLeaf(cols[8]).GetValue()),
+            "trkeffErr13":float(tree.GetLeaf(cols[9]).GetValue())
+        }
+
+    existing_rows = []
+    if os.path.exists(filename):
+        f = ROOT.TFile(filename, "READ")
+        tree = f.Get(tree_name)
+        if tree and isinstance(tree, ROOT.TTree):
+            # Check if it has the leaves we expect for our standardization
+            has_all_leaves = all(tree.GetLeaf(c) for c in cols)
+            if has_all_leaves:
+                for i in range(tree.GetEntries()):
+                    tree.GetEntry(i)
+                    existing_rows.append(_entry_to_row(tree))
+            else:
+                print(f"INFO: Tree '{tree_name}' exists but structure differs. Standardizing...")
+        f.Close()
+
+    # Add new data
+    new_row = {
+        "Run": run, "Fill": fill,
+        "trkeff1":      effs.get(1,  (0,0))[0],
+        "trkeff11":     effs.get(11, (0,0))[0],
+        "trkeff3":      effs.get(3,  (0,0))[0],
+        "trkeff13":     effs.get(13, (0,0))[0],
+        "trkeffErr1":   effs.get(1,  (0,0))[1],
+        "trkeffErr11":  effs.get(11, (0,0))[1],
+        "trkeffErr3":   effs.get(3,  (0,0))[1],
+        "trkeffErr13":  effs.get(13, (0,0))[1]
+    }
+    
+    # Avoid duplicates if we are standardizing an existing file
+    is_duplicate = any(r["Run"] == run for r in existing_rows)
+    if not is_duplicate:
+        existing_rows.append(new_row)
+
+    f = ROOT.TFile(filename, "UPDATE")
+    # If the tree already exists, we might want to overwrite it with the standardized version
+    old_tree = f.Get(tree_name)
+    if old_tree:
+        f.Delete(f"{tree_name};*")
+    
+    tree = ROOT.TTree(tree_name, "Tracking efficiencies")
+    
+    # Buffers
+    b_run = array('i', [0]); tree.Branch("Run", b_run, "Run/I")
+    b_fill = array('i', [0]); tree.Branch("Fill", b_fill, "Fill/I")
+    b_eff1 = array('f', [0]); tree.Branch("trkeff1", b_eff1, "trkeff1/F")
+    b_eff11 = array('f', [0]); tree.Branch("trkeff11", b_eff11, "trkeff11/F")
+    b_eff3 = array('f', [0]); tree.Branch("trkeff3", b_eff3, "trkeff3/F")
+    b_eff13 = array('f', [0]); tree.Branch("trkeff13", b_eff13, "trkeff13/F")
+    b_err1 = array('f', [0]); tree.Branch("trkeffErr1", b_err1, "trkeffErr1/F")
+    b_err11 = array('f', [0]); tree.Branch("trkeffErr11", b_err11, "trkeffErr11/F")
+    b_err3 = array('f', [0]); tree.Branch("trkeffErr3", b_err3, "trkeffErr3/F")
+    b_err13 = array('f', [0]); tree.Branch("trkeffErr13", b_err13, "trkeffErr13/F")
+
+    for row in existing_rows:
+        b_run[0] = row["Run"]
+        b_fill[0] = row["Fill"]
+        b_eff1[0] = row["trkeff1"]
+        b_eff11[0] = row["trkeff11"]
+        b_eff3[0] = row["trkeff3"]
+        b_eff13[0] = row["trkeff13"]
+        b_err1[0] = row["trkeffErr1"]
+        b_err11[0] = row["trkeffErr11"]
+        b_err3[0] = row["trkeffErr3"]
+        b_err13[0] = row["trkeffErr13"]
+        tree.Fill()
+
+    tree.Write()
+    f.Close()
 
 
 
@@ -115,12 +215,12 @@ def sf_track_is_reconstructible(
         elif int( (detID/100000)%2 ) == 1:
             nMCPoints['v'][int(detID/1e+6)]+=1
 
-        for sfPlane in range(1, len(nMCPoints['v'])+1):
-            if nMCPoints['v'][sfPlane]>0:
-                nScifiPoints['v']+=1
+    for sfPlane in range(1, len(nMCPoints['v'])+1):
+        if nMCPoints['v'][sfPlane]>0:
+            nScifiPoints['v']+=1
 
-            if nMCPoints['h'][sfPlane]>0:
-                nScifiPoints['h']+=1
+        if nMCPoints['h'][sfPlane]>0:
+            nScifiPoints['h']+=1
 
     if (nScifiPoints['h'] >= 3 and nScifiPoints['v'] >= 3):
         return True
@@ -156,9 +256,9 @@ def ds_track_is_reconstructible(
                 nMCPoints['h'][station] += 1
 
 
-        for dsPlane in range(1, 5):
-            if nMCPoints['v'][dsPlane] > 0: nDSPoints['v'] += 1
-            if nMCPoints['h'][dsPlane] > 0: nDSPoints['h'] += 1
+    for dsPlane in range(1, 5):
+        if nMCPoints['v'][dsPlane] > 0: nDSPoints['v'] += 1
+        if nMCPoints['h'][dsPlane] > 0: nDSPoints['h'] += 1
 
     if (nDSPoints['h'] >= 3 and nDSPoints['v'] >= 3):
         return True

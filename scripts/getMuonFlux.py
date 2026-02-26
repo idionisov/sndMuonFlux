@@ -1,6 +1,10 @@
 import argparse
 import os
 import time
+import sys
+
+# Add project root to path to allow importing from pythonHelpers
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import numpy as np
 import ROOT
@@ -12,17 +16,19 @@ import pythonHelpers.muon_flux
 import pythonHelpers.nTracks
 import pythonHelpers.trkeff
 
-this_dir = os.path.dirname(os.path.abspath(__file__))
+THIS_DIR = os.path.dirname(os.path.abspath(__file__))
+
+pythonHelpers.general.load_cpp_extension("libtrkeffUtils.so", "trkeff")
+pythonHelpers.general.load_cpp_extension("libmuonFluxUtils.so", "muonFluxUtils")
 
 
-def get_or_compute_track_counts(args, this_dir: str):
+def get_or_compute_track_counts(args, THIS_DIR: str):
     if any(n <= 0 for n in args.track_counts):
         print("\n" + "-"*50)
-        print("Four valid track counts weren't provided. Computing them.")
+        print("Four valid track counts weren't provided. Starting track counter...")
         print("-"*50)
 
-        lib_path = os.path.abspath(os.path.join(this_dir, "build", "nTracks", "libnTracks.so"))
-        ROOT.gSystem.Load(lib_path)
+        pythonHelpers.general.load_cpp_extension("libnTracks.so", "nTracks")
 
         std_vec = ROOT.getNTracks(
             args.input_files,
@@ -37,7 +43,7 @@ def get_or_compute_track_counts(args, this_dir: str):
         }
 
     else:
-        print("Using precalculated track counts.")
+        print("Using provided track counts")
         return {
             "IP1": {
                 1:  args.track_counts[0],
@@ -48,10 +54,10 @@ def get_or_compute_track_counts(args, this_dir: str):
         }
 
 
-def get_or_compute_efficiencies(args, outfile_root: str, this_dir: str):
+def get_or_compute_efficiencies(args, outfile_root: str, THIS_DIR: str, is_mc: bool = False):
     if all(e > 0 for e in args.tracking_efficiencies) and \
        all(e > 0 for e in args.tracking_efficiency_errors):
-        print("Using precalculated tracking efficiencies.")
+        print("Using provided tracking efficiencies")
         effs = {
             1:  (args.tracking_efficiencies[0], args.tracking_efficiency_errors[0]),
             11: (args.tracking_efficiencies[1], args.tracking_efficiency_errors[1]),
@@ -61,81 +67,53 @@ def get_or_compute_efficiencies(args, outfile_root: str, this_dir: str):
         return effs
 
     print("\n" + "-"*50)
-    print("Computing tracking efficiencies.")
+    print("Evaluating tracking efficiencies...")
     print("-"*50)
 
-    lib_path = os.path.abspath(os.path.join(this_dir, "build", "trkeff", "libtrkeffUtils.so"))
-    ROOT.gSystem.Load(lib_path)
+    if not is_mc:
+        effs_vec = ROOT.computeTrackingEfficiencies_TT(
+            args.input_files,
+            args.geofile,
+            outfile_root,
+            args.hist_params,
+            *tuple(args.x_range), *tuple(args.y_range),
+            *tuple(args.xz_range), *tuple(args.yz_range),
+            *tuple(args.z_ref),
+            args.veto_dist,
+            args.us5_dist,
+            args.sf_to_ds_dist,
+            int(args.n_break)
+        )
+        effs = pythonHelpers.trkeff.get_effs_as_dict(effs_vec)
+    else:
+        if args.py:
+            effs = pythonHelpers.trkeff.get_trkeff_mct(
+                input_files = args.input_files,
+                sigma = args.sigma,
+                col_rate = args.col_rate,
+                L_LHC = args.L_lhc,
+                x_range = args.x_range,
+                y_range = args.y_range,
+                z_ref = args.z_ref,
+                xz_range = args.xz_range,
+                yz_range = args.yz_range
+            )
+        else:
+            effs_vec = ROOT.computeTrackingEfficiencies_MCT(
+                args.input_files,
+                args.sigma,
+                args.col_rate,
+                args.L_lhc,
+                *tuple(args.x_range), *tuple(args.y_range),
+                *tuple(args.z_ref),
+                *tuple(args.xz_range), *tuple(args.yz_range)
+            )
+            effs = pythonHelpers.trkeff.get_effs_as_dict(effs_vec)
 
-    effs_vec = ROOT.computeTrackingEfficiencies_TT(
-        args.input_files,
-        args.geofile,
-        outfile_root,
-        args.hist_params,
-        *tuple(args.x_range), *tuple(args.y_range),
-        *tuple(args.xz_range), *tuple(args.yz_range),
-        *tuple(args.z_ref),
-        args.veto_dist,
-        args.us5_dist,
-        args.sf_to_ds_dist,
-        int(args.n_break)
-    )
-
-    effs = pythonHelpers.trkeff.get_effs_as_dict(effs_vec)
     return effs
 
 
-
-def compute_bunch_correction(args,
-    ch: ROOT.TChain,
-    track_counts: dict,
-    outfile_root: str
-):
-    # ch.GetEntry(0)
-    # acc_mode = ch.EventHeader.GetAccMode()
-
-    # if acc_mode == 12:   # Heavy-ion
-    #     correction = {tt: 1.0 for tt in track_counts["IP1"]}
-
-    #     if "IP2B1B2" in track_counts and track_counts["IP2B1B2"]:
-    #         print("\n" + "-"*50)
-    #         print("Beginning bunch structure extraction.")
-    #         print("-"*50)
-
-    #         bunch_nums = pythonHelpers.bunch_struct.extract_bunch_struct(
-    #             args.input_files, outfile_root, args.n_break
-    #         )
-
-    #         bunch_counts = {
-    #             "IP2B1B2":     len(set(bunch_nums["B2"]) & set(bunch_nums["B1"]) - set(bunch_nums["IP1"])),
-    #             "IP1&IP2B1B2": len(set(bunch_nums["B2"]) & set(bunch_nums["B1"]) & set(bunch_nums["IP1"]))
-    #         }
-
-    #         for tt in track_counts["IP1"]:
-    #             correction[tt] = 1 - (
-    #                 track_counts["IP2B1B2"][tt] * bunch_counts["IP1&IP2B1B2"]
-    #             ) / (
-    #                 track_counts["IP1"][tt] * bunch_counts["IP2B1B2"]
-    #             )
-
-    #         print(f"Correction factors: {correction}")
-
-    #     return correction
-
-    # if acc_mode == 11:   # Proton
-    #     pass            # No corrections for protons are implemented yet
-
-    # No corrections
-    return {tt: 1.0 for tt in track_counts["IP1"]}
-
-
-
-
-
-
-
 def run_muon_flux_pipeline(args) -> dict:
-    this_dir = os.path.dirname(os.path.abspath(__file__))
     area = pythonHelpers.general.compute_area(args.x_range, args.y_range)
 
     # Output files
@@ -165,24 +143,22 @@ def run_muon_flux_pipeline(args) -> dict:
 
 
         # Track counts
-        track_counts = get_or_compute_track_counts(args, this_dir)
+        track_counts = get_or_compute_track_counts(args, THIS_DIR)
 
         # Tracking efficiencies
-        effs = get_or_compute_efficiencies(args, outfile_root, this_dir)
-
-        # CORRECTION FACTORS MIGHT BE MORE CONVENIENT TO APPLY SEPARATELY
-        # Correction factors from bunch structure
-        corr_factors = compute_bunch_correction(
-            args, ch, track_counts, outfile_root
-        )
+        effs = get_or_compute_efficiencies(args, outfile_root, THIS_DIR, is_mc)
 
         # Compute final muon flux
         muon_flux = pythonHelpers.muon_flux.compute_fluxes_per_track_type(
             track_counts, lumi, area, effs,
-            lumi_err, args.scale, corr_factors
+            lumi_err, args.scale,
+            {1:1, 11:1, 3:1, 13:1} # No bunch correction
         )
 
         # Save outputs
+        if outfile_root:
+            pythonHelpers.trkeff.save_trkeff_to_root(outfile_root, run, fill, effs)
+        
         pythonHelpers.muon_flux.write_output(
             outfile_root, run, fill, args.scale,
             track_counts, effs, muon_flux, "muonFlux"
@@ -202,7 +178,9 @@ def run_muon_flux_pipeline(args) -> dict:
         }
 
     else:
-        muon_flux = pythonHelpers.muon_flux.get_muon_flux_mc(
+        effs = get_or_compute_efficiencies(args, outfile_root, THIS_DIR, is_mc)
+
+        muon_flux = pythonHelpers.muon_flux.compute_flux_mc_with_effs(
             input_files = args.input_files,
             sigma = args.sigma,
             col_rate = args.col_rate,
@@ -212,15 +190,15 @@ def run_muon_flux_pipeline(args) -> dict:
             z_ref = args.z_ref,
             xz_range = args.xz_range,
             yz_range = args.yz_range,
-            trk_eff = args.tracking_efficiencies,
-            trkeff_err = args.tracking_efficiency_errors
+            effs = effs,
+            python_eff = args.py
         )
 
         return {
             "run": np.nan,
             "fill": np.nan,
             "acc_mode": acc_mode,
-            "effs": np.nan,
+            "effs": effs,
             "muon_flux": muon_flux
         }
 
@@ -232,8 +210,9 @@ if __name__ == "__main__":
     start = time.time()
 
 
-    this_dir = os.path.dirname(os.path.abspath(__file__))
-    default_hist_params = os.path.join(this_dir, "trkeff", "histParams.conf")
+    # Get project root (parent of scripts/)
+    ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    default_hist_params = os.path.join(ROOT_DIR, "trkeff", "histParams.conf")
 
     parser = argparse.ArgumentParser(description="Script for computing the muon flux for an SND run.")
 
@@ -255,6 +234,7 @@ if __name__ == "__main__":
     parser.add_argument('--us5-dist', type=float, default=3.0, help="Minimal distance to activated us5 bar for SciFi tagging tracks.")
     parser.add_argument('--sf-to-ds-dist', type=float, default=3.0, help="Maximum distance between tagging and candidate tracks at reference plane for successful match.")
     parser.add_argument('--n-break', type=int, default=1e7, help="Breakpoint for the number of events processed (bunch structure and tracking efficiency).")
+    parser.add_argument('-py', action='store_true', help="Whether to use the python implementation, instead of the C++ one, of the tracking efficiency estimation.")
     parser.add_argument('--hist-params', type=str, default=default_hist_params, help="Histogram parameter config file.")
     parser.add_argument('-sc', '--scale', type=int, default=1, help="Scaling used for track reconstruction")
     parser.add_argument('-x-sec', '--sigma', type=float, default=8e7, help="Cross section for inelastic hadron collisions for MC simulations.")

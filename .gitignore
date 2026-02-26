@@ -41,6 +41,7 @@ cmake_install.cmake
 install_manifest.txt
 
 # Out-of-source build dirs
+notebooks
 build/
 build*/
 cmake-build*/

@@ -1,8 +1,12 @@
-from typing import Union
 import argparse
 import os
+import sys
 
-import numpy as np
+# Add project root to path to allow importing from pythonHelpers
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+# from typing import Union
+# import numpy as np
 import ROOT
 
 import pythonHelpers.general
@@ -14,10 +18,7 @@ THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 
 
 
-def get_trkeff_pipeline(args,
-    # Assuming build is done in the "build" directory
-    BUILD_DIR: str = os.path.join(THIS_DIR, "build")
-):
+def get_trkeff_pipeline(args):
     if not args.geofile:
         if not args.MC_Truth:
             print("WARNING: Geofile was not provided. Input is assumed to be Monte Carlo simulations.")
@@ -28,14 +29,7 @@ def get_trkeff_pipeline(args,
     else:
         print("Tagging track method will be used!")
 
-    if os.path.exists(os.path.join(BUILD_DIR, "trkeff", "libtrkeffUtils.so")):
-        path_to_trkefflib = os.path.join(BUILD_DIR, "trkeff", "libtrkeffUtils.so")
-    else:
-        print(f"WARNING: Did not find file {os.path.join(BUILD_DIR, 'trkeff', 'libtrkeffUtils.so')}")
-        print(f"WARNING: Starting recursive search in {THIS_DIR}")
-        path_to_trkefflib = pythonHelpers.general.find_library("libtrkeffUtils.so", THIS_DIR)
-    path_to_trkefflib = os.path.abspath(path_to_trkefflib)
-    ROOT.gSystem.Load(path_to_trkefflib)
+    pythonHelpers.general.load_cpp_extension("libtrkeffUtils.so", "trkeff")
 
 
     if len(args.fout) == 0:
@@ -46,7 +40,7 @@ def get_trkeff_pipeline(args,
     outfile_root, outfile_csv = pythonHelpers.general.get_outfiles(outnames)
 
     ch, run, fill, acc_mode = pythonHelpers.general.load_run_info(args.input_files)
-    if not pythonHelpers.general.is_mc(ch) or args.MC_Truth==False:
+    if not pythonHelpers.general.is_mc(ch) or not args.MC_Truth:
         vec = ROOT.computeTrackingEfficiencies_TT(
             args.input_files,
             args.geofile,
@@ -62,27 +56,43 @@ def get_trkeff_pipeline(args,
         )
         effs = pythonHelpers.trkeff.get_effs_as_dict(vec)
     else:
-        effs = pythonHelpers.trkeff.get_trkeff_mct(
-            input_files = args.input_files,
-            sigma = args.sigma,
-            col_rate = args.col_rate,
-            L_LHC = args.L_lhc,
-            x_range = args.x_range,
-            y_range = args.y_range,
-            xz_range = args.xz_range,
-            yz_range = args.yz_range,
-            z_ref = args.z_ref
-        )
+        if args.py:
+            effs = pythonHelpers.trkeff.get_trkeff_mct(
+                input_files = args.input_files,
+                sigma = args.sigma,
+                col_rate = args.col_rate,
+                L_LHC = args.L_lhc,
+                x_range = args.x_range,
+                y_range = args.y_range,
+                z_ref = args.z_ref,
+                xz_range = args.xz_range,
+                yz_range = args.yz_range
+            )
+        else:
+            vec = ROOT.computeTrackingEfficiencies_MCT(
+                args.input_files,
+                args.sigma,
+                args.col_rate,
+                args.L_lhc,
+                *tuple(args.x_range), *tuple(args.y_range),
+                *tuple(args.z_ref),
+                *tuple(args.xz_range), *tuple(args.yz_range)
+            )
+            effs = pythonHelpers.trkeff.get_effs_as_dict(vec)
 
     if outfile_csv:
         pythonHelpers.trkeff.save_trkeff_to_csv(outfile_csv, run, fill, effs)
+    if outfile_root:
+        pythonHelpers.trkeff.save_trkeff_to_root(outfile_root, run, fill, effs)
 
     return effs
 
 
 
 if __name__ == "__main__":
-    default_hist_params = os.path.join(THIS_DIR, "trkeff", "histParams.conf")
+    # Get project root (parent of scripts/)
+    ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    default_hist_params = os.path.join(ROOT_DIR, "trkeff", "histParams.conf")
 
 
     parser = argparse.ArgumentParser(description="Script for computing the tracking efficiency.")
@@ -90,7 +100,7 @@ if __name__ == "__main__":
     parser.add_argument('-i', '--input-files', type=str, required=True, help="Regex pattern for input ROOT files with reconstructed tracks, e.g., '/path/to/files*.root'.")
     parser.add_argument('-g', '--geofile', type=str, required=False, help="Geofile to accurately compute distance of closest approach to MuFilter scintillator bars.")
     parser.add_argument('-o', '--fout', type=str, nargs="+", default=[], help="Optional output files (root by default to store histograms as well, but could be csv -- both formats simultaneously are supported). Csv files store only efficiencies while root files store root objets as well.")
-    parser.add_argument('-z', '--z-ref', nargs="+", type=float, default=[430., 430., 450., 450.], help="Reference z-plane coordinates for each track type (types 1, 11, 3, 13). Provide 4 numbers: zRef1 zRef11 zRef3 zRef13.")
+    parser.add_argument('-z', '--z-ref', nargs=4, type=float, default=[430., 430., 450., 450.], help="Reference z-plane coordinates for each track type (types 1, 11, 3, 13). Provide 4 numbers: zRef1 zRef11 zRef3 zRef13.")
     parser.add_argument('-x', '--x-range', nargs=2, type=float, default=[-42., -10.], help="Fiducial x-coordinate range [xmin, xmax] in cm for tracks to be counted.")
     parser.add_argument('-y', '--y-range', nargs=2, type=float, default=[19., 48.], help="Fiducial y-coordinate range [ymin, ymax] in cm for tracks to be counted.")
     parser.add_argument('-xz', '--xz-range', nargs=2, type=float, default=[-1e12, 1e12], help="Allowed tagging track angle in XZ plane [xzMin, xzMax] in mrad. Tracks outside this range are ignored.")
@@ -101,6 +111,7 @@ if __name__ == "__main__":
     parser.add_argument('--n-break', type=int, default=1e6, help="Breakpoint for the number of tagging tracks considered.")
     parser.add_argument('--hist-params', type=str, default=default_hist_params, help="Histogram parameter config file.")
     parser.add_argument('-mct', '--MC-Truth', action='store_true', help="Wether to use the Monte Carlo Truth method or not. Defaults to Tagging track method.")
+    parser.add_argument('-py', action='store_true', help="Wether to use the python implementation, instead of the C++ one, of the efficiencu estimation.")
     parser.add_argument('-x-sec', '--sigma', type=float, default=8e7, help="Cross section for inelastic hadron collisions for MC simulations.")
     parser.add_argument('-r', '--col-rate', type=float, default=100e6, help="Collision rate in Monte Carlo simulations.")
     parser.add_argument('--L-lhc', type=float, default=1, help="Luminosity to normalize to in nb.")

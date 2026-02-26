@@ -1,3 +1,9 @@
+import os
+import sys
+
+# Add project root to path to allow importing from pythonHelpers
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 import pythonHelpers.lumi
 
 if __name__ == "__main__":

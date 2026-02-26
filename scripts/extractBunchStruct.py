@@ -1,5 +1,10 @@
 import argparse
 import time
+import os
+import sys
+
+# Add project root to path to allow importing from pythonHelpers
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import ROOT
 

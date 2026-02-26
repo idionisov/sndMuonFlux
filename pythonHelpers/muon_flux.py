@@ -120,28 +120,28 @@ def save_muonFlux_to_root(
 
     def _entry_to_row(tree):
         return {
-            "Run":       int(getattr(tree, cols[0])),
-            "Fill":      int(getattr(tree, cols[1])),
-            "flux1":     int(getattr(tree, cols[2])),
-            "flux11":    int(getattr(tree, cols[3])),
-            "flux3":     int(getattr(tree, cols[4])),
-            "flux13":    int(getattr(tree, cols[5])),
-            "fluxErr1":  int(getattr(tree, cols[6])),
-            "fluxErr11": int(getattr(tree, cols[7])),
-            "fluxErr3":  int(getattr(tree, cols[8])),
-            "fluxErr13": int(getattr(tree, cols[9]))
+            "Run":       int(tree.GetLeaf(cols[0]).GetValue()),
+            "Fill":      int(tree.GetLeaf(cols[1]).GetValue()),
+            "flux1":     float(tree.GetLeaf(cols[2]).GetValue()),
+            "flux11":    float(tree.GetLeaf(cols[3]).GetValue()),
+            "flux3":     float(tree.GetLeaf(cols[4]).GetValue()),
+            "flux13":    float(tree.GetLeaf(cols[5]).GetValue()),
+            "fluxErr1":  float(tree.GetLeaf(cols[6]).GetValue()),
+            "fluxErr11": float(tree.GetLeaf(cols[7]).GetValue()),
+            "fluxErr3":  float(tree.GetLeaf(cols[8]).GetValue()),
+            "fluxErr13": float(tree.GetLeaf(cols[9]).GetValue())
         }
 
     existing_rows = []
-
     if os.path.exists(filename):
         f = ROOT.TFile(filename, "READ")
-        existing_tree = f.Get(tree_name)
-        if existing_tree:
-            n_entries = int(existing_tree.GetEntries())
-            for i in range(n_entries):
-                existing_tree.GetEntry(i)
-                existing_rows.append(_entry_to_row(existing_tree))
+        tree = f.Get(tree_name)
+        if tree and isinstance(tree, ROOT.TTree):
+            has_all_leaves = all(tree.GetLeaf(c) for c in cols)
+            if has_all_leaves:
+                for i in range(tree.GetEntries()):
+                    tree.GetEntry(i)
+                    existing_rows.append(_entry_to_row(tree))
         f.Close()
 
     new_row = {
@@ -156,7 +156,10 @@ def save_muonFlux_to_root(
         "fluxErr3":  float(muon_flux_dict.get(3,  (0, 0))[1]),
         "fluxErr13": float(muon_flux_dict.get(13, (0, 0))[1])
     }
-    existing_rows.append(new_row)
+    
+    is_duplicate = any(r["Run"] == run for r in existing_rows)
+    if not is_duplicate:
+        existing_rows.append(new_row)
 
     outfile = ROOT.TFile(filename, "UPDATE")
     old_tree = outfile.Get(tree_name)
@@ -181,6 +184,10 @@ def save_muonFlux_to_root(
     tree.Branch(cols[3], mf11_buf, f"{cols[3]}/F")
     tree.Branch(cols[4], mf3_buf,  f"{cols[4]}/F")
     tree.Branch(cols[5], mf13_buf, f"{cols[5]}/F")
+    tree.Branch(cols[6], mferr1_buf,  f"{cols[6]}/F")
+    tree.Branch(cols[7], mferr11_buf, f"{cols[7]}/F")
+    tree.Branch(cols[8], mferr3_buf,  f"{cols[8]}/F")
+    tree.Branch(cols[9], mferr13_buf, f"{cols[9]}/F")
 
     for row in existing_rows:
         run_buf[0]     = int(row["Run"])
@@ -260,6 +267,124 @@ def compute_muon_flux_mc(Nr, dNr, L, A, eps, eps_err, Ks):
         }
     }
 
+def compute_flux_mc_with_effs(
+    input_files: str,
+    sigma:       float        = 8e7,    # [nb]
+    col_rate:    float        = 100e6,  # [s^-1]
+    L_LHC:       float        = 1,      # [nb]
+    x_range:     tuple[float, float] = (-42., -10.), # [cm]
+    y_range:     tuple[float, float] = ( 19.,  48.), # [cm]
+    z_ref:       tuple[float, float, float, float] = (430., 430., 450., 450.), # [cm]
+    xz_range:    tuple[float, float] = (-1e12, 1e12), # [mrad]
+    yz_range:    tuple[float, float] = (-1e12, 1e12), # [mrad]
+    effs:        dict = {},
+    python_eff:  bool = False
+):
+    L_MC = col_rate/sigma       # [nb^-1 s^-1]
+    Ks = L_LHC / L_MC           # []
+
+    trackTypes = (1, 11, 3, 13, "mcTrk")
+    xy = {
+        'min': {'x': x_range[0], 'y': y_range[0]},
+        'max': {'x': x_range[1], 'y': y_range[1]}
+    }
+
+    z_ref_dict = {1: z_ref[0], 11: z_ref[1], 3: z_ref[2], 13: z_ref[3]}
+    A = (xy['max']['x']-xy['min']['x']) * (xy['max']['y']-xy['min']['y'])
+
+    ch = pythonHelpers.general.load_snd_TChain(input_files)
+    n_entries = ch.GetEntries()
+
+    eps = effs.copy()
+    eps["mcTrk"] = (1.0, 0.0)
+
+    Nrate               = {tt: 0.0 for tt in trackTypes}
+    Nrate_err2          = {tt: 0.0 for tt in trackTypes}
+
+    next_print = 0
+    if python_eff:
+        print("Using python implementation...")
+        for i_entry, entry in enumerate(ch):
+            progress = (i_entry * 100) // n_entries
+            if progress >= next_print:
+                print(f"{progress:.0f} %")
+                next_print += 5
+
+            if not entry.EventHeader.isIP1():
+                continue
+
+            w = 0.0
+            for mctrack in entry.MCTrack:
+                if (
+                    mctrack.GetMotherId()==-1 and
+                    abs(mctrack.GetPdgCode())==13
+                ):
+                    w = mctrack.GetWeight()
+
+                    mcTrkZref = pythonHelpers.general.get_point_at_z(mctrack, 430)
+                    if (
+                        xy['min']['x'] <= mcTrkZref.X() <= xy['max']['x'] and
+                        xy['min']['y'] <= mcTrkZref.Y() <= xy['max']['y']
+                    ):
+                        Nrate["mcTrk"] += w
+                        Nrate_err2["mcTrk"] += w*w
+                        break
+
+            reco_track_types = set()
+            for trk in entry.Reco_MuonTracks:
+                if not (trk.getTrackFlag() and trk.getTrackMom().Z()):
+                    continue
+
+                tt = trk.getTrackType()
+                ref = pythonHelpers.general.get_point_at_z(trk, z_ref_dict[tt])
+                x = ref.X()
+                y = ref.Y()
+
+                if not (
+                    xy["min"]["x"] <= x <= xy["max"]["x"] and
+                    xy["min"]["y"] <= y <= xy["max"]["y"]
+                ):
+                    continue
+                reco_track_types.add(tt)
+
+            for tt in reco_track_types:
+                Nrate[tt] += w
+                Nrate_err2[tt] += w*w
+    else:
+        print("Using C++ implementation...")
+        this_dir_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        lib_path = os.path.abspath(os.path.join(this_dir_path, "build", "muonFluxUtils", "libmuonFluxUtils.so"))
+        ROOT.gSystem.Load(lib_path)
+
+        cpp_res = ROOT.computeMCRates(
+            input_files,
+            x_range[0], x_range[1],
+            y_range[0], y_range[1],
+            z_ref_dict[1], z_ref_dict[11], z_ref_dict[3], z_ref_dict[13]
+        )
+
+        Nrate["mcTrk"] = cpp_res.nRate[0]
+        Nrate_err2["mcTrk"] = cpp_res.nRateErr2[0]
+        for tt in (1, 11, 3, 13):
+            Nrate[tt] = cpp_res.nRate[tt]
+            Nrate_err2[tt] = cpp_res.nRateErr2[tt]
+
+    mf = {}
+    for tt in trackTypes:
+        Nr = Nrate[tt]
+        dNr = np.sqrt(Nrate_err2[tt])
+
+        D_sym  = compute_muon_flux_mc(
+            Nr, dNr, L_LHC, A, eps[tt][0], eps[tt][1], Ks
+        )
+        phi, phiErr = D_sym["results"]
+        mf[tt] = (phi, phiErr)
+
+        print(f"\n > {tt}:\tΦ = {phi:.03f} ± {phiErr:.03f}    \033[1;39m[fb/cm²]\033[0m")
+
+    return mf
+
+
 def get_muon_flux_mc(
     input_files: str,
     sigma:       float        = 8e7,    # [nb]
@@ -272,6 +397,7 @@ def get_muon_flux_mc(
     yz_range:    tuple[float, float] = (-1e12, 1e12), # [mrad]
     trk_eff:      tuple[float, float, float, float] = (0, 0, 0, 0),
     trkeff_err:  tuple[float, float, float, float] = (0, 0, 0, 0),
+    python_eff:  bool = False
 ):
     L_MC = col_rate/sigma       # [nb^-1 s^-1]
     Ks = L_LHC / L_MC           # []
@@ -297,83 +423,119 @@ def get_muon_flux_mc(
         any(eff == 0 for eff in trk_eff) or
         any(err == 0 for err in trkeff_err)
     ):
-        print("Tracking efficiencies were not provided and will be calculated...")
-        eps = pythonHelpers.trkeff.get_trkeff_mct(
-            input_files = input_files,
-            sigma = sigma,
-            col_rate = col_rate,
-            L_LHC = L_LHC,
-            x_range = x_range,
-            y_range = y_range,
-            z_ref = (z_ref[1], z_ref[11], z_ref[3], z_ref[13]),
-            xz_range = xz_range,
-            yz_range = yz_range,
-        )
+        print("Tracking efficiencies were not provided and will be evaluated...")
+        if python_eff:
+            print("\tUsing the python implementation")
+            eps = pythonHelpers.trkeff.get_trkeff_mct(
+                input_files = input_files,
+                sigma = sigma,
+                col_rate = col_rate,
+                L_LHC = L_LHC,
+                x_range = x_range,
+                y_range = y_range,
+                z_ref = (z_ref[1], z_ref[11], z_ref[3], z_ref[13]),
+                xz_range = xz_range,
+                yz_range = yz_range,
+            )
+        else:
+            print("\tUsing the C++ implementation")
+            eps = ROOT.computeTrackingEfficiencies_MCT(
+                input_files,
+                sigma,
+                col_rate,
+                L_lhc,
+                *tuple(x_range), *tuple(y_range),
+                z_ref[1], z_ref[11], z_ref[3], z_ref[13],
+                *tuple(xz_range), *tuple(yz_range)
+            )
+            eps = pythonHelpers.trkeff.get_effs_as_dict(eps)
+
     else:
+        print("Adopting the provided efficiencies")
         eps = {
             1:  (trk_eff[0], trkeff_err[0]),
             11: (trk_eff[1], trkeff_err[1]),
             3:  (trk_eff[2], trkeff_err[2]),
             13: (trk_eff[3], trkeff_err[3])
         }
-        print("Tracking efficiencies were provided:")
         print(eps)
     eps["mcTrk"] = (1, 0)
 
     eventMCmu = {}
 
+    print("Starting evaluation of the track rate...")
     Nrate               = {tt: 0.0 for tt in trackTypes}
     Nrate_err2          = {tt: 0.0 for tt in trackTypes}
     Nrate["mcTrk"]      = 0.0
     Nrate_err2["mcTrk"] = 0.0
 
     next_print = 0
-    for i_entry, entry in enumerate(ch):
-        progress = (i_entry * 100) // n_entries
-        if progress >= next_print:
-            print(f"{progress:.0f} %")
-            next_print += 5
+    if python_eff:
+        print("\tStarting python implementation of track rate evaluation...")
+        for i_entry, entry in enumerate(ch):
+            progress = (i_entry * 100) // n_entries
+            if progress >= next_print:
+                print(f"{progress:.0f} %")
+                next_print += 5
 
-        if not entry.EventHeader.isIP1():
-            continue
+            if not entry.EventHeader.isIP1():
+                continue
 
-        for mctrack in entry.MCTrack:
-            if (
-                mctrack.GetMotherId()==-1 and
-                abs(mctrack.GetPdgCode())==13
-            ):
-                eventMCmu[i_entry] = mctrack.GetWeight()
-                w = eventMCmu.get(i_entry, 0.0)
-
-                mcTrkZref = pythonHelpers.general.get_point_at_z(mctrack, 430)
+            for mctrack in entry.MCTrack:
                 if (
-                    xy['min']['x'] <= mcTrkZref.X() <= xy['max']['x'] and
-                    xy['min']['y'] <= mcTrkZref.Y() <= xy['max']['y']
+                    mctrack.GetMotherId()==-1 and
+                    abs(mctrack.GetPdgCode())==13
                 ):
-                    Nrate["mcTrk"] += w
-                    Nrate_err2["mcTrk"] += w*w
-                    break
+                    eventMCmu[i_entry] = mctrack.GetWeight()
+                    w = eventMCmu.get(i_entry, 0.0)
 
-        reco_track_types = set()
-        for trk in entry.Reco_MuonTracks:
-            if not (trk.getTrackFlag() and trk.getTrackMom().Z()):
-                continue
+                    mcTrkZref = pythonHelpers.general.get_point_at_z(mctrack, 430)
+                    if (
+                        xy['min']['x'] <= mcTrkZref.X() <= xy['max']['x'] and
+                        xy['min']['y'] <= mcTrkZref.Y() <= xy['max']['y']
+                    ):
+                        Nrate["mcTrk"] += w
+                        Nrate_err2["mcTrk"] += w*w
+                        break
 
-            tt = trk.getTrackType()
-            ref = pythonHelpers.general.get_point_at_z(trk, z_ref[tt])
-            x = ref.X()
-            y = ref.Y()
+            reco_track_types = set()
+            for trk in entry.Reco_MuonTracks:
+                if not (trk.getTrackFlag() and trk.getTrackMom().Z()):
+                    continue
 
-            if not (
-                xy["min"]["x"] <= x <= xy["max"]["x"] and
-                xy["min"]["y"] <= y <= xy["max"]["y"]
-            ):
-                continue
-            reco_track_types.add(tt)
+                tt = trk.getTrackType()
+                ref = pythonHelpers.general.get_point_at_z(trk, z_ref[tt])
+                x = ref.X()
+                y = ref.Y()
 
-        for tt in reco_track_types:
-            Nrate[tt] += w
-            Nrate_err2[tt] += w*w
+                if not (
+                    xy["min"]["x"] <= x <= xy["max"]["x"] and
+                    xy["min"]["y"] <= y <= xy["max"]["y"]
+                ):
+                    continue
+                reco_track_types.add(tt)
+
+            for tt in reco_track_types:
+                Nrate[tt] += w
+                Nrate_err2[tt] += w*w
+    else:
+        print("\tStarting C++ implementation of track rate evaluation...")
+        this_dir_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        lib_path = os.path.abspath(os.path.join(this_dir_path, "build", "muonFluxUtils", "libmuonFluxUtils.so"))
+        ROOT.gSystem.Load(lib_path)
+
+        cpp_res = ROOT.computeMCRates(
+            input_files,
+            x_range[0], x_range[1],
+            y_range[0], y_range[1],
+            z_ref[1], z_ref[11], z_ref[3], z_ref[13]
+        )
+
+        Nrate["mcTrk"] = cpp_res.nRate[0]
+        Nrate_err2["mcTrk"] = cpp_res.nRateErr2[0]
+        for tt in (1, 11, 3, 13):
+            Nrate[tt] = cpp_res.nRate[tt]
+            Nrate_err2[tt] = cpp_res.nRateErr2[tt]
 
     mf, statVars, effVars = {}, {}, {}
 
@@ -397,157 +559,12 @@ def get_muon_flux_mc(
         varPhiStat = statVars[tt]
         varPhiEff  = effVars[tt]
 
-        print(f"\n > {tt}:\tΦ = {phi:.03f} ± {phiErr:.03f}    \033[1;39m[fb/cm²]\033[0m")
-        # print(f"\n > {tt}:\tNr/A = {Nr/A}    \033[1;39m[cm^-2 s^-1]\033[0m")
-        # print(f"\n > {tt}:\tNr/(A.L_MC) = {Nr/(A*L_MC)}    \033[1;39m [fb cm^-2]\033[0m")
-        print(f"        \tError:  {phiErr*100/phi:.03f} %")
-        print(f"        \tStatistics: {varPhiStat} ({varPhiStat*100/(varPhiStat+varPhiEff):.02f} %)")
-        print(f"        \tEfficiency: {varPhiEff} ({varPhiEff*100/(varPhiStat+varPhiEff):.02f} %)")
+        # print(f"\n > {tt}:\tΦ = {phi:.03f} ± {phiErr:.03f}    \033[1;39m[fb/cm²]\033[0m")
+        # # print(f"\n > {tt}:\tNr/A = {Nr/A}    \033[1;39m[cm^-2 s^-1]\033[0m")
+        # # print(f"\n > {tt}:\tNr/(A.L_MC) = {Nr/(A*L_MC)}    \033[1;39m [fb cm^-2]\033[0m")
+        # print(f"        \tError:  {phiErr*100/phi:.03f} %")
+        # print(f"        \tStatistics: {varPhiStat} ({varPhiStat*100/(varPhiStat+varPhiEff):.02f} %)")
+        # print(f"        \tEfficiency: {varPhiEff} ({varPhiEff*100/(varPhiStat+varPhiEff):.02f} %)")
 
 
     return mf
-
-
-def get_muon_flux_mc_xy_dist(
-    input_files: str,
-    sigma:       float        = 8e7,    # [nb]
-    col_rate:    float        = 100e6,  # [s^-1]
-    L_LHC:       float        = 1,      # [nb]
-    x_range:     tuple[float, float] = (-42., -10.), # [cm]
-    y_range:     tuple[float, float] = ( 19.,  48.), # [cm]
-    z_ref:       tuple[float, float, float, float] = (430., 430., 450., 450.), # [cm]
-    xz_range:    tuple[float, float] = (-1e12, 1e12), # [mrad]
-    yz_range:    tuple[float, float] = (-1e12, 1e12), # [mrad]
-    trk_eff:      tuple[float, float, float, float] = (0, 0, 0, 0),
-    trkeff_err:  tuple[float, float, float, float] = (0, 0, 0, 0),
-    nbins_x:     int = 10,
-    nbins_y:     int = 10
-):
-    L_MC = col_rate/sigma       # [nb^-1 s^-1]
-    Ks = L_LHC / L_MC           # []
-
-    trackTypes = (1, 11, 3, 13, "mcTrk")
-    xy = {
-        'min': {'x': x_range[0], 'y': y_range[0]},
-        'max': {'x': x_range[1], 'y': y_range[1]}
-    }
-
-    z_ref = {1: z_ref[0], 11: z_ref[1], 3: z_ref[2], 13: z_ref[3]}
-    A = (xy['max']['x']-xy['min']['x']) * (xy['max']['y']-xy['min']['y'])
-
-    ch = pythonHelpers.general.load_snd_TChain(input_files)
-    n_entries = ch.GetEntries()
-
-    print(f"{ 'Entries':<10} : {n_entries:,}")
-    print(f"{ 'Luminosity':<10} : {L_MC}")
-    print(f"{ 'Area':<10} : {A}")
-    print(f"{ 'Scaling':<10} : {Ks}")
-
-    if (
-        any(eff == 0 for eff in trk_eff) or
-        any(err == 0 for err in trkeff_err)
-    ):
-        print("Tracking efficiencies were not provided and will be calculated...")
-        eps = pythonHelpers.trkeff.get_trkeff_mct(
-            input_files = input_files,
-            sigma = sigma,
-            col_rate = col_rate,
-            L_LHC = L_LHC,
-            x_range = x_range,
-            y_range = y_range,
-            z_ref = (z_ref[1], z_ref[11], z_ref[3], z_ref[13]),
-            xz_range = xz_range,
-            yz_range = yz_range,
-        )
-    else:
-        eps = {
-            1:  (trk_eff[0], trkeff_err[0]),
-            11: (trk_eff[1], trkeff_err[1]),
-            3:  (trk_eff[2], trkeff_err[2]),
-            13: (trk_eff[3], trkeff_err[3])
-        }
-        print("Tracking efficiencies were provided:")
-        print(eps)
-    eps["mcTrk"] = (1, 0)
-
-    hists = {}
-    for tt in trackTypes:
-        hists[tt] = ROOT.TH2D(f"h_{tt}", f"xy dist for {tt}", nbins_x, x_range[0], x_range[1], nbins_y, y_range[0], y_range[1])
-
-    eventMCmu = {}
-    next_print = 0
-    for i_entry, entry in enumerate(ch):
-        progress = (i_entry * 100) // n_entries
-        if progress >= next_print:
-            print(f"{progress:.0f} %")
-            next_print += 5
-
-        if not entry.EventHeader.isIP1():
-            continue
-
-        w = 0.0
-        for mctrack in entry.MCTrack:
-            if mctrack.GetMotherId()==-1:
-                eventMCmu[i_entry] = mctrack.GetWeight()
-                w = eventMCmu.get(i_entry, 0.0)
-
-                mcTrkZref = pythonHelpers.general.get_point_at_z(mctrack, 430)
-                if (
-                    xy['min']['x'] <= mcTrkZref.X() <= xy['max']['x'] and
-                    xy['min']['y'] <= mcTrkZref.Y() <= xy['max']['y']
-                ):
-                    hists["mcTrk"].Fill(mcTrkZref.X(), mcTrkZref.Y(), w)
-                    break
-        
-        for trk in entry.Reco_MuonTracks:
-            if not (trk.getTrackFlag() and trk.getTrackMom().Z()):
-                continue
-
-            tt = trk.getTrackType()
-            ref = pythonHelpers.general.get_point_at_z(trk, z_ref[tt])
-            x = ref.X()
-            y = ref.Y()
-
-            if not (
-                xy["min"]["x"] <= x <= xy["max"]["x"] and
-                xy["min"]["y"] <= y <= xy["max"]["y"]
-            ):
-                continue
-            hists[tt].Fill(x, y, w)
-
-    mf, statVars, effVars = {}, {}, {}
-
-    for tt in trackTypes:
-        bin_contents = []
-        for i in range(1, hists[tt].GetNbinsX() + 1):
-            for j in range(1, hists[tt].GetNbinsY() + 1):
-                bin_contents.append(hists[tt].GetBinContent(i, j))
-        
-        if bin_contents and np.sum(bin_contents) > 0:
-            Nr = np.mean(bin_contents)
-            dNr = np.std(bin_contents)
-        else:
-            Nr = 0
-            dNr = 0
-
-        # The computed flux is per bin area. To get the total flux, it should be scaled by the number of bins.
-        num_bins = nbins_x * nbins_y
-        area_per_bin = A / num_bins
-
-        D_sym  = compute_muon_flux_mc(
-            Nr, dNr, L_LHC, area_per_bin, eps[tt][0], eps[tt][1], Ks
-        )
-        phi, phiErr = D_sym["results"]
-        statVars[tt] = D_sym["variances"]["stat"]
-        effVars[tt] = D_sym["variances"]["eff"]
-
-        mf[tt]     = (phi, phiErr)
-        varPhiStat = statVars[tt]
-        varPhiEff  = effVars[tt]
-
-        print(f"\n > {tt}:\tΦ = {phi:.03f} ± {phiErr:.03f}    \033[1;39m[fb/cm²]\033[0m")
-        print(f"        \tError:  {phiErr*100/phi if phi > 0 else 0:.03f} %")
-        print(f"        \tStatistics: {varPhiStat} ({varPhiStat*100/(varPhiStat+varPhiEff) if (varPhiStat+varPhiEff) > 0 else 0:.02f} %)")
-        print(f"        \tEfficiency: {varPhiEff} ({varPhiEff*100/(varPhiStat+varPhiEff) if (varPhiStat+varPhiEff) > 0 else 0:.02f} %)")
-
-    return mf, hists
