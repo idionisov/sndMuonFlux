@@ -113,7 +113,7 @@ def save_trkeff_to_root(
         "trkeffErr3":   effs.get(3,  (0,0))[1],
         "trkeffErr13":  effs.get(13, (0,0))[1]
     }
-    
+
     # Avoid duplicates if we are standardizing an existing file
     is_duplicate = any(r["Run"] == run for r in existing_rows)
     if not is_duplicate:
@@ -124,9 +124,9 @@ def save_trkeff_to_root(
     old_tree = f.Get(tree_name)
     if old_tree:
         f.Delete(f"{tree_name};*")
-    
+
     tree = ROOT.TTree(tree_name, "Tracking efficiencies")
-    
+
     # Buffers
     b_run = array('i', [0]); tree.Branch("Run", b_run, "Run/I")
     b_fill = array('i', [0]); tree.Branch("Fill", b_fill, "Fill/I")

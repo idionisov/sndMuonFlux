@@ -206,10 +206,16 @@ EffResults createAndSaveTEffs(
         double branchEff;
         double branchErr;
 
-        effTree->Branch("runNum", &branchRunNum, "runNum/I");
-        effTree->Branch("trackType", &branchTrackType, "trackType/I");
-        effTree->Branch("eff", &branchEff, "eff/D");
-        effTree->Branch("effErr", &branchErr, "effErr/D");
+        if (!effTree->GetBranch("runNum")) effTree->Branch("runNum", &branchRunNum, "runNum/I");
+        if (!effTree->GetBranch("trackType")) effTree->Branch("trackType", &branchTrackType, "trackType/I");
+        if (!effTree->GetBranch("eff")) effTree->Branch("eff", &branchEff, "eff/D");
+        if (!effTree->GetBranch("effErr")) effTree->Branch("effErr", &branchErr, "effErr/D");
+
+        // Set addresses for existing branches to ensure Fill() uses local variables
+        effTree->SetBranchAddress("runNum", &branchRunNum);
+        effTree->SetBranchAddress("trackType", &branchTrackType);
+        effTree->SetBranchAddress("eff", &branchEff);
+        effTree->SetBranchAddress("effErr", &branchErr);
 
         for (size_t i = 0; i < results.size(); ++i) {
             branchRunNum = runNum;
