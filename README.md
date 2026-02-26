@@ -58,7 +58,7 @@ Independent control of track counting and efficiency estimation is provided by t
 ### 1. Track Counting (minimal options)
 
 ```bash
-python getNtracks.py -i /path/to/recoData/\*.root -o /path/to/output.csv
+python getNtracks.py -i /path/to/recoData/\*.root
 ```
 
 See `python getNtracks.py --help` for all options.
@@ -66,13 +66,13 @@ See `python getNtracks.py --help` for all options.
 ### 2. Tracking Efficiency (minimal options)
 
 ```bash
-python getTrkeff.py -i /path/to/recoData/\*.root -g /path/to/geofile.root -o /path/to/output.root
+python getTrkeff.py -i /path/to/recoData/\*.root -g /path/to/geofile.root
 ```
 
 For both MC-Truth and tagging track methods.
 See `python getTrkeff.py --help` for all options.
 
-### 3. Muon Flux Calculation
+### 3. Muon Flux Calculation (minimal options)
 
 ```bash
 python getMuonFlux.py -i /path/to/recoData/\*.root -g /path/to/geofile.root
