@@ -49,7 +49,7 @@ Independent control of track counting and efficiency estimation is provided by t
 
 #### Notes:
 
-- Assumed implemented methods `sndRecoTrack::getPlaneAtZ(float Z)` and `sndRecoTrack::getDoca(const MuFilterHit* mfHit) const` [https://github.com/SND-LHC/sndsw/commit/9817bcee3444c895afa4004f73a32729a9db5eff, https://github.com/SND-LHC/sndsw/commit/c0990d781931f0c6a3ee6bda7f46d782ffd6dcaf]
+- Assumed implemented methods `sndRecoTrack::getPlaneAtZ(float Z)` and `sndRecoTrack::getDoca(const MuFilterHit* mfHit) const` [https://github.com/idionisov/sndsw/blob/354bee7d9d7f8490a6b4f0124d3b5a95cac430e8/shipLHC/sndRecoTrack.cxx#L270-L304]
 - Bash expands the wildcard "\*". Input is read by TChain, so make sure to escape it with "\\\*".
 - Output is either appended to an existing file, or a new file is created.
     - Only implemented for data and not Monte Carlo samples.
