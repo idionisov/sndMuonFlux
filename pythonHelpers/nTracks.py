@@ -117,6 +117,7 @@ def save_nTracks_to_root(
     if old_tree:
         outfile.Delete(f"{tree_name};*")
     tree = ROOT.TTree(tree_name, "Number of tracks tree")
+    ROOT.SetOwnership(tree, False)
 
     run_buf = array('i', [0])
     fill_buf = array('i', [0])

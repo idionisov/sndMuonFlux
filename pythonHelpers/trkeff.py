@@ -125,9 +125,11 @@ def save_trkeff_to_root(
     if old_tree:
         f.Delete(f"{tree_name};*")
 
-    tree = ROOT.TTree(tree_name, "Tracking efficiencies")
-
-    # Buffers
+        tree = ROOT.TTree(tree_name, "Tracking efficiencies")
+        ROOT.SetOwnership(tree, False)
+        
+        # Buffers
+    
     b_run = array('i', [0]); tree.Branch("Run", b_run, "Run/I")
     b_fill = array('i', [0]); tree.Branch("Fill", b_fill, "Fill/I")
     b_eff1 = array('f', [0]); tree.Branch("trkeff1", b_eff1, "trkeff1/F")
