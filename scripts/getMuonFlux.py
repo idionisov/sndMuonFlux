@@ -30,11 +30,16 @@ def get_or_compute_track_counts(args, THIS_DIR: str):
 
         pythonHelpers.general.load_cpp_extension("libnTracks.so", "nTracks")
 
+        start_ts = args.t_range[0] if args.t_range[0] is not None else -1.0
+        end_ts   = args.t_range[1] if args.t_range[1] is not None else -1.0
+
         std_vec = ROOT.getNTracks(
             args.input_files,
             *tuple(args.x_range), *tuple(args.y_range),
             *tuple(args.xz_range), *tuple(args.yz_range),
             *tuple(args.z_ref),
+            start_ts,
+            end_ts
         )
 
         return {
@@ -133,7 +138,9 @@ def run_muon_flux_pipeline(args) -> dict:
 
 
     if not is_mc:
-        lumi = pythonHelpers.lumi.get_lumi_eos(args.input_files)
+        start_ts = args.t_range[0] if args.t_range else None
+        end_ts   = args.t_range[1] if args.t_range else None
+        lumi = pythonHelpers.lumi.get_lumi_eos(args.input_files, start_ts=start_ts, end_ts=end_ts)
         if acc_mode==12:
             lumi_err = 0.035*lumi
         elif acc_mode==11:
@@ -218,6 +225,7 @@ if __name__ == "__main__":
 
 
     parser.add_argument('-i', '--input-files', type=str, required=True, help="Regex pattern for input ROOT files with reconstructed tracks, e.g., '/path/to/files*.root'.")
+    parser.add_argument('-t', '--t-range', nargs=2, type=float, default=[None, None], help="UTC timestamp range [start, end] in seconds for data selection.")
     parser.add_argument('-ntrks', '--track-counts', nargs=4, type=float, default=[0, 0, 0, 0], help="Track counts for each track type (types 1, 11, 3, 13). Provide 4 numbers: nTrks1 nTrks11 nTrks3 nTrks13.")
     parser.add_argument('-effs', '--tracking-efficiencies', nargs=4, type=float, default=[0, 0, 0, 0], help="Tracking efficiency for each track type (types 1, 11, 3, 13). Provide 4 numbers: eff1 eff11 eff3 eff13.")
     parser.add_argument('-effErr', '--tracking-efficiency-errors', nargs=4, type=float, default=[0, 0, 0, 0], help="Tracking efficiency errors for each track type (types 1, 11, 3, 13). Provide 4 numbers: err1 err11 err3 err13.")

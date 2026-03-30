@@ -33,11 +33,16 @@ def get_nTracks_pipeline(args):
     # fill = pythonHelpers.general.get_lhc_fill(args.input_files)
     _, run, fill, acc_mode = pythonHelpers.general.load_run_info(args.input_files)
 
+    start_ts = args.t_range[0] if args.t_range[0] is not None else -1.0
+    end_ts   = args.t_range[1] if args.t_range[1] is not None else -1.0
+
     vec = ROOT.getNTracks(
         args.input_files,
         *args.x_range, *args.y_range,
         *args.xz_range, *args.yz_range,
-        *args.z_ref
+        *args.z_ref,
+        start_ts,
+        end_ts
     )
     bunches = ("IP1", "IP2", "B1Only", "B2noB1", "IP2B1B2")
     counts = {
@@ -55,6 +60,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Script for getting the number of tracks of a given run.")
 
     parser.add_argument('-i', '--input-files', type=str, required=True, help="Regex pattern for input ROOT files with reconstructed tracks, e.g., '/path/to/files*.root'.")
+    parser.add_argument('-t', '--t-range', nargs=2, type=float, default=[None, None], help="UTC timestamp range [start, end] in seconds for data selection.")
     parser.add_argument('-o', '--fout', type=str, nargs="+", default=[], help="Optional output files (root by default, but could be csv -- both formats simultaneously are supported).")
     parser.add_argument('-z', '--z-ref', nargs=4, type=float, default=[430., 430., 450., 450.], help="Reference z-plane coordinates for each track type (types 1, 11, 3, 13). Provide 4 numbers: zRef1 zRef11 zRef3 zRef13.")
     parser.add_argument('-x', '--x-range', nargs=2, type=float, default=[-42., -10.], help="Fiducial x-coordinate range [xmin, xmax] in cm for tracks to be counted.")

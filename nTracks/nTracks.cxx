@@ -29,7 +29,9 @@ std::vector<std::array<int, 4>> getNTracks(
     double zRef1  = 430.0,
     double zRef11 = 430.0,
     double zRef3  = 450.0,
-    double zRef13 = 450.0
+    double zRef13 = 450.0,
+    double start_ts = -1.0,
+    double end_ts = -1.0
 ) {
     std::array<double, 4> zRef = {zRef1, zRef11, zRef3, zRef13};
     std::vector<std::array<int, 4>> result;
@@ -76,6 +78,12 @@ std::vector<std::array<int, 4>> getNTracks(
         }
 
         ch->GetEntry(i_entry);
+
+        // Filter by UTC timestamp
+        double event_ts = eventHeader->GetUTCtimestamp(); // in ms
+        if (start_ts > 0 && event_ts < start_ts * 1000.0) continue;
+        if (end_ts > 0 && event_ts > end_ts * 1000.0) continue;
+
 
         // Process tracks
         for (int i = 0; i < tracks->GetEntries(); ++i) {
@@ -162,6 +170,11 @@ int main(int argc, char **argv)
     double zRef3  = atof(argv[12]);
     double zRef13 = atof(argv[13]);
 
+    double start_ts = -1.0;
+    double end_ts   = -1.0;
+    if (argc >= 15) start_ts = atof(argv[14]);
+    if (argc >= 16) end_ts   = atof(argv[15]);
+
     // 0 -> IP1
     // 1 -> IP2
     // 2 -> B1
@@ -171,7 +184,8 @@ int main(int argc, char **argv)
         inputStr,
         xmin, xmax, ymin, ymax,
         xzMin, xzMax, yzMin, yzMax,
-        zRef1, zRef11, zRef3, zRef13
+        zRef1, zRef11, zRef3, zRef13,
+        start_ts, end_ts
     );
 
     // Print results
