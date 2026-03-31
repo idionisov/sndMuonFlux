@@ -32,7 +32,7 @@
 bool ThereIsAMuon(SNDLHCEventHeader* header, TClonesArray* mcTracks) {
     for (int i = 0; i < mcTracks->GetEntriesFast(); ++i) {
         ShipMCTrack* trk = (ShipMCTrack*)mcTracks->At(i);
-        if (std::abs(trk->GetPdgCode()) == 13) return true;
+        if (trk->GetPdgCode() == 13) return true;
     }
     return false;
 }
@@ -43,7 +43,7 @@ bool SfTrackIsReconstructible(TClonesArray* scifiPoints) {
 
     for (int i = 0; i < scifiPoints->GetEntriesFast(); ++i) {
         ScifiPoint* p = (ScifiPoint*)scifiPoints->At(i);
-        if (std::abs(p->PdgCode()) != 13 || p->GetTrackID() != 0) continue;
+        if (p->PdgCode() != 13 || p->GetTrackID() != 0) continue;
 
         int detID = p->GetDetectorID();
         int station = detID / 1000000;
@@ -67,7 +67,7 @@ bool DsTrackIsReconstructible(TClonesArray* muFilterPoints) {
 
     for (int i = 0; i < muFilterPoints->GetEntriesFast(); ++i) {
         MuFilterPoint* p = (MuFilterPoint*)muFilterPoints->At(i);
-        if (std::abs(p->PdgCode()) != 13 || p->GetTrackID() != 0) continue;
+        if (p->PdgCode() != 13 || p->GetTrackID() != 0) continue;
 
         int detID = p->GetDetectorID();
         if (detID < 30000 || detID > 34999) continue;
@@ -90,7 +90,7 @@ bool DsTrackIsReconstructible(TClonesArray* muFilterPoints) {
 bool McTrackCrossedFiducialArea(TClonesArray* mcTracks, double zRef, double xmin, double xmax, double ymin, double ymax) {
     for (int i = 0; i < mcTracks->GetEntriesFast(); ++i) {
         ShipMCTrack* trk = (ShipMCTrack*)mcTracks->At(i);
-        if (trk->GetMotherId() == -1 && std::abs(trk->GetPdgCode()) == 13) {
+        if (trk->GetMotherId() == -1 && trk->GetPdgCode() == 13) {
             double px = trk->GetPx();
             double py = trk->GetPy();
             double pz = trk->GetPz();

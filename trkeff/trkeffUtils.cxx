@@ -1,6 +1,8 @@
 #include <climits>
 #include <cmath>
 #include <map>
+#include <numeric>
+#include <vector>
 
 #include "TMath.h"
 #include "TEfficiency.h"
@@ -70,9 +72,7 @@ std::pair<double, double> computeTrackingEfficiency(
     int biny_min = hTotal->GetYaxis()->FindBin(ymin);
     int biny_max = hTotal->GetYaxis()->FindBin(ymax);
 
-    double sum = 0.0;
-    double sumsq = 0.0;
-    int count = 0;
+    std::vector<double> effs;
 
     for (int ix = binx_min; ix <= binx_max; ix++) {
         for (int iy = biny_min; iy <= biny_max; iy++) {
@@ -82,20 +82,18 @@ std::pair<double, double> computeTrackingEfficiency(
             if (!teff.GetTotalHistogram()->GetBinContent(bin))
                 continue;
 
-            double eff = teff.GetEfficiency(bin);
-            double err = teff.GetEfficiencyErrorLow(bin);
-
-            sum   += eff;
-            sumsq += err*err;
-            count++;
+            effs.push_back(teff.GetEfficiency(bin));
         }
     }
 
-    if (count == 0)
+    if (effs.empty())
         return {0.0, 0.0};
 
-    double mean_eff = sum / count;
-    double stdev_eff = std::sqrt(sumsq) / count;
+    double sum = std::accumulate(effs.begin(), effs.end(), 0.0);
+    double mean_eff = sum / effs.size();
+
+    double sq_sum = std::inner_product(effs.begin(), effs.end(), effs.begin(), 0.0);
+    double stdev_eff = std::sqrt(sq_sum / effs.size() - mean_eff * mean_eff);
 
     return {mean_eff, stdev_eff};
 }
