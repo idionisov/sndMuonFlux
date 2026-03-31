@@ -80,9 +80,9 @@ std::vector<std::array<int, 4>> getNTracks(
         ch->GetEntry(i_entry);
 
         // Filter by UTC timestamp
-        double event_ts = eventHeader->GetUTCtimestamp(); // in ms
-        if (start_ts > 0 && event_ts < start_ts * 1000.0) continue;
-        if (end_ts > 0 && event_ts > end_ts * 1000.0) continue;
+        double event_ts = eventHeader->GetUTCtimestamp(); // in seconds
+        if (start_ts > 0 && event_ts < start_ts) continue;
+        if (end_ts > 0 && event_ts > end_ts) continue;
 
 
         // Process tracks

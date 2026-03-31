@@ -58,6 +58,9 @@ def get_lumi_eos(
     delivered_mask = delivered_deltas < 600
     delivered_run = delivered_mask
 
+    if not np.any(delivered_run):
+        return 0.0
+
     return (
         np.cumsum(
             delivered_deltas[delivered_run] * delivered_inst_lumi[1:][delivered_run]
