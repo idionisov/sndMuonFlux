@@ -54,9 +54,6 @@ def get_lumi_eos(
         delivered_inst_lumi = delivered_inst_lumi[mask_end]
         delivered_unix_timestamp = delivered_unix_timestamp[mask_end]
 
-    if len(delivered_unix_timestamp) < 2:
-        return 0.0
-
     delivered_deltas = delivered_unix_timestamp[1:] - delivered_unix_timestamp[:-1]
     delivered_mask = delivered_deltas < 600
     delivered_run = delivered_mask
