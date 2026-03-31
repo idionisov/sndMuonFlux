@@ -228,22 +228,7 @@ if __name__ == "__main__":
 
 
     parser.add_argument('-i', '--input-files', type=str, required=True, help="Regex pattern for input ROOT files with reconstructed tracks, e.g., '/path/to/files*.root'.")
-<<<<<<< HEAD
-=======
-<<<<<<< HEAD
->>>>>>> 6bb6327 (Eplicitly state which arguments are optional in getMuonFlux.py, getNtracks.py and getTrkeff.py)
     parser.add_argument('-t', '--t-range', nargs=2, type=float, default=[None, None], help="(Optional) UTC timestamp range [start, end] in seconds for data selection.")
-    parser.add_argument('-ntrks', '--track-counts', nargs=4, type=float, default=[0, 0, 0, 0], help="(Optional) Track counts for each track type (types 1, 11, 3, 13). Provide 4 numbers: nTrks1 nTrks11 nTrks3 nTrks13.")
-    parser.add_argument('-effs', '--tracking-efficiencies', nargs=4, type=float, default=[0, 0, 0, 0], help="(Optional) Tracking efficiency for each track type (types 1, 11, 3, 13). Provide 4 numbers: eff1 eff11 eff3 eff13.")
-    parser.add_argument('-effErr', '--tracking-efficiency-errors', nargs=4, type=float, default=[0, 0, 0, 0], help="(Optional) Tracking efficiency errors for each track type (types 1, 11, 3, 13). Provide 4 numbers: err1 err11 err3 err13.")
-    parser.add_argument("-Lerr", "--lumi-relative-err", type=float, default=0, help="(Optional) Relative error on luminosity.")
-    parser.add_argument('-g', '--geofile', type=str, default="", help="(Optional) Geofile to accurately compute distance of closest approach to MuFilter scintillator bars.")
-    parser.add_argument('-o', '--fout', type=str, nargs="+", default=[], help="(Optional) Output files (root by default to store all objects, but could be csv -- both formats simultaneously are supported). Csv files store only efficiencies while root files store root objets as well.")
-    parser.add_argument('-z', '--z-ref', nargs=4, type=float, default=[430., 430., 450., 450.], help="(Optional) Reference z-plane coordinates for each track type (types 1, 11, 3, 13). Provide 4 numbers: zRef1 zRef11 zRef3 zRef13.")
-<<<<<<< HEAD
-=======
-=======
-    parser.add_argument('-t', '--t-range', nargs=2, type=float, default=[None, None], help="(Optional) UTC timestamp range [start, end] in seconds for data selection. Selects entire fill by default.")
     parser.add_argument('-ntrks', '--track-counts', nargs=4, type=float, default=[0, 0, 0, 0], help="(Optional) Track counts for each track type (types 1, 11, 3, 13). Provide 4 numbers: nTrks1 nTrks11 nTrks3 nTrks13. Will run track counter if not provided.")
     parser.add_argument('-effs', '--tracking-efficiencies', nargs=4, type=float, default=[0, 0, 0, 0], help="(Optional) Tracking efficiency for each track type (types 1, 11, 3, 13). Provide 4 numbers: eff1 eff11 eff3 eff13. Will run efficiency estimation if not provided.")
     parser.add_argument('-effErr', '--tracking-efficiency-errors', nargs=4, type=float, default=[0, 0, 0, 0], help="(Optional) Tracking efficiency errors for each track type (types 1, 11, 3, 13). Provide 4 numbers: err1 err11 err3 err13. Will run efficiency estimation if not provided.")
@@ -251,8 +236,6 @@ if __name__ == "__main__":
     parser.add_argument('-g', '--geofile', type=str, default="", help="(Optional) Geofile to accurately compute distance of closest approach to MuFilter scintillator bars.")
     parser.add_argument('-o', '--fout', type=str, nargs="+", default=[], help="(Optional) Output files (root by default to store all objects, but could be csv -- both formats simultaneously are supported). Csv files store only efficiencies while root files store root objets as well.")
     parser.add_argument('-z', '--z-ref', nargs=4, type=float, default=[430., 430., 450., 450.], help="(Optional) Reference z-plane coordinates for each track type (types 1, 11, 3, 13). Provide 4 numbers: zRef1 zRef11 zRef3 zRef13. Default: [430, 430, 450, 450]")
->>>>>>> 02abf83 (Eplicitly state which arguments are optional in getMuonFlux.py, getNtracks.py and getTrkeff.py)
->>>>>>> 6bb6327 (Eplicitly state which arguments are optional in getMuonFlux.py, getNtracks.py and getTrkeff.py)
     parser.add_argument('-x', '--x-range', nargs=2, type=float, default=[-42., -10.], help="(Optional) Fiducial x-coordinate range [xmin, xmax] in cm for tracks to be counted.")
     parser.add_argument('-y', '--y-range', nargs=2, type=float, default=[19., 48.], help="(Optional) Fiducial y-coordinate range [ymin, ymax] in cm for tracks to be counted.")
     parser.add_argument('-xz', '--xz-range', nargs=2, type=float, default=[-1e12, 1e12], help="(Optional) Allowed tagging track angle in XZ plane [xzMin, xzMax] in mrad. Tracks outside this range are ignored.")
