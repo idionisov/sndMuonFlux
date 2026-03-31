@@ -228,6 +228,10 @@ if __name__ == "__main__":
 
 
     parser.add_argument('-i', '--input-files', type=str, required=True, help="Regex pattern for input ROOT files with reconstructed tracks, e.g., '/path/to/files*.root'.")
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+>>>>>>> 6bb6327 (Eplicitly state which arguments are optional in getMuonFlux.py, getNtracks.py and getTrkeff.py)
     parser.add_argument('-t', '--t-range', nargs=2, type=float, default=[None, None], help="(Optional) UTC timestamp range [start, end] in seconds for data selection.")
     parser.add_argument('-ntrks', '--track-counts', nargs=4, type=float, default=[0, 0, 0, 0], help="(Optional) Track counts for each track type (types 1, 11, 3, 13). Provide 4 numbers: nTrks1 nTrks11 nTrks3 nTrks13.")
     parser.add_argument('-effs', '--tracking-efficiencies', nargs=4, type=float, default=[0, 0, 0, 0], help="(Optional) Tracking efficiency for each track type (types 1, 11, 3, 13). Provide 4 numbers: eff1 eff11 eff3 eff13.")
@@ -236,21 +240,34 @@ if __name__ == "__main__":
     parser.add_argument('-g', '--geofile', type=str, default="", help="(Optional) Geofile to accurately compute distance of closest approach to MuFilter scintillator bars.")
     parser.add_argument('-o', '--fout', type=str, nargs="+", default=[], help="(Optional) Output files (root by default to store all objects, but could be csv -- both formats simultaneously are supported). Csv files store only efficiencies while root files store root objets as well.")
     parser.add_argument('-z', '--z-ref', nargs=4, type=float, default=[430., 430., 450., 450.], help="(Optional) Reference z-plane coordinates for each track type (types 1, 11, 3, 13). Provide 4 numbers: zRef1 zRef11 zRef3 zRef13.")
+<<<<<<< HEAD
+=======
+=======
+    parser.add_argument('-t', '--t-range', nargs=2, type=float, default=[None, None], help="(Optional) UTC timestamp range [start, end] in seconds for data selection. Selects entire fill by default.")
+    parser.add_argument('-ntrks', '--track-counts', nargs=4, type=float, default=[0, 0, 0, 0], help="(Optional) Track counts for each track type (types 1, 11, 3, 13). Provide 4 numbers: nTrks1 nTrks11 nTrks3 nTrks13. Will run track counter if not provided.")
+    parser.add_argument('-effs', '--tracking-efficiencies', nargs=4, type=float, default=[0, 0, 0, 0], help="(Optional) Tracking efficiency for each track type (types 1, 11, 3, 13). Provide 4 numbers: eff1 eff11 eff3 eff13. Will run efficiency estimation if not provided.")
+    parser.add_argument('-effErr', '--tracking-efficiency-errors', nargs=4, type=float, default=[0, 0, 0, 0], help="(Optional) Tracking efficiency errors for each track type (types 1, 11, 3, 13). Provide 4 numbers: err1 err11 err3 err13. Will run efficiency estimation if not provided.")
+    parser.add_argument("-Lerr", "--lumi-relative-err", type=float, default=0, help="(Optional) Relative error on luminosity. Defaults to 0.02 for proton data and 0.035 for heavy-ion data.")
+    parser.add_argument('-g', '--geofile', type=str, default="", help="(Optional) Geofile to accurately compute distance of closest approach to MuFilter scintillator bars.")
+    parser.add_argument('-o', '--fout', type=str, nargs="+", default=[], help="(Optional) Output files (root by default to store all objects, but could be csv -- both formats simultaneously are supported). Csv files store only efficiencies while root files store root objets as well.")
+    parser.add_argument('-z', '--z-ref', nargs=4, type=float, default=[430., 430., 450., 450.], help="(Optional) Reference z-plane coordinates for each track type (types 1, 11, 3, 13). Provide 4 numbers: zRef1 zRef11 zRef3 zRef13. Default: [430, 430, 450, 450]")
+>>>>>>> 02abf83 (Eplicitly state which arguments are optional in getMuonFlux.py, getNtracks.py and getTrkeff.py)
+>>>>>>> 6bb6327 (Eplicitly state which arguments are optional in getMuonFlux.py, getNtracks.py and getTrkeff.py)
     parser.add_argument('-x', '--x-range', nargs=2, type=float, default=[-42., -10.], help="(Optional) Fiducial x-coordinate range [xmin, xmax] in cm for tracks to be counted.")
     parser.add_argument('-y', '--y-range', nargs=2, type=float, default=[19., 48.], help="(Optional) Fiducial y-coordinate range [ymin, ymax] in cm for tracks to be counted.")
     parser.add_argument('-xz', '--xz-range', nargs=2, type=float, default=[-1e12, 1e12], help="(Optional) Allowed tagging track angle in XZ plane [xzMin, xzMax] in mrad. Tracks outside this range are ignored.")
     parser.add_argument('-yz', '--yz-range', nargs=2, type=float, default=[-1e12, 1e12], help="(Optional) Allowed tagging track angle in YZ plane [yzMin, yzMax] in mrad. Tracks outside this range are ignored.")
     parser.add_argument('--tree-name', type=str, default="cbmsim", help="(Optional) Name of the TTree in input files")
-    parser.add_argument('--veto-dist', type=float, default=3.0, help="(Optional) Minimal distance to activated veto bar for DS tagging tracks.")
-    parser.add_argument('--us5-dist', type=float, default=3.0, help="(Optional) Minimal distance to activated us5 bar for SciFi tagging tracks.")
-    parser.add_argument('--sf-to-ds-dist', type=float, default=3.0, help="(Optional) Maximum distance between tagging and candidate tracks at reference plane for successful match.")
+    parser.add_argument('--veto-dist', type=float, default=3.0, help="(Optional) Minimal distance to activated veto bar for DS tagging tracks in cm.")
+    parser.add_argument('--us5-dist', type=float, default=3.0, help="(Optional) Minimal distance to activated us5 bar for SciFi tagging tracks in cm.")
+    parser.add_argument('--sf-to-ds-dist', type=float, default=3.0, help="(Optional) Maximum distance between tagging and candidate tracks at reference plane in cm for successful match.")
     parser.add_argument('--n-break', type=int, default=1e7, help="(Optional) Breakpoint for the number of events processed (bunch structure and tracking efficiency).")
     parser.add_argument('-py', action='store_true', help="(Optional) Whether to use the python implementation, instead of the C++ one, of the tracking efficiency estimation.")
     parser.add_argument('--hist-params', type=str, default=default_hist_params, help="(Optional) Histogram parameter config file.")
     parser.add_argument('-sc', '--scale', type=int, default=1, help="(Optional) Scaling used for track reconstruction")
-    parser.add_argument('-x-sec', '--sigma', type=float, default=8e7, help="(Optional) Cross section for inelastic hadron collisions for MC simulations.")
-    parser.add_argument('-r', '--col-rate', type=float, default=100e6, help="(Optional) Collision rate in Monte Carlo simulations.")
-    parser.add_argument('--L-lhc', type=float, default=1, help="(Optional) Luminosity to normalize to in nb.")
+    parser.add_argument('-x-sec', '--sigma', type=float, default=8e7, help="(Simulations) Cross section for inelastic hadron collisions for MC simulations.")
+    parser.add_argument('-r', '--col-rate', type=float, default=100e6, help="(Simulations) Collision rate in Monte Carlo simulations.")
+    parser.add_argument('--L-lhc', type=float, default=1, help="(Simulations) Luminosity to normalize to in nb.")
 
     args = parser.parse_args()
     results = run_muon_flux_pipeline(args)
