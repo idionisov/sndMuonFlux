@@ -43,7 +43,7 @@ bool SfTrackIsReconstructible(TClonesArray* scifiPoints) {
 
     for (int i = 0; i < scifiPoints->GetEntriesFast(); ++i) {
         ScifiPoint* p = (ScifiPoint*)scifiPoints->At(i);
-        if (p->PdgCode() != 13 || p->GetTrackID() != 0) continue;
+        if (std::abs(p->PdgCode()) != 13 || p->GetTrackID() != 0) continue;
 
         int detID = p->GetDetectorID();
         int station = detID / 1000000;
@@ -67,7 +67,7 @@ bool DsTrackIsReconstructible(TClonesArray* muFilterPoints) {
 
     for (int i = 0; i < muFilterPoints->GetEntriesFast(); ++i) {
         MuFilterPoint* p = (MuFilterPoint*)muFilterPoints->At(i);
-        if (p->PdgCode() != 13 || p->GetTrackID() != 0) continue;
+        if (std::abs(p->PdgCode()) != 13 || p->GetTrackID() != 0) continue;
 
         int detID = p->GetDetectorID();
         if (detID < 30000 || detID > 34999) continue;
@@ -196,10 +196,12 @@ std::vector<double> computeTrackingEfficiencies_MCT(
         reco_map[3]  = _ds && McTrackCrossedFiducialArea(mcTracks, zRef3,  xmin, xmax, ymin, ymax);
         reco_map[13] = _ds && McTrackCrossedFiducialArea(mcTracks, zRef13, xmin, xmax, ymin, ymax);
 
-        double weight = 1.0;
+        double weight = Ks;
         if (mcTracks->GetEntriesFast() > 0) {
             ShipMCTrack* mc = (ShipMCTrack*)mcTracks->At(0);
-            weight = mc->GetWeight() * Ks;
+            double w = mc->GetWeight();
+            if (w == 0) w = 1.0;
+            weight = w * Ks;
         }
 
         for (int tt : trackTypes) {
@@ -260,11 +262,6 @@ std::vector<double> computeTrackingEfficiencies_MCT(
         double errLow = p_hat - lo_b;
 
         results[tt] = {p_hat, (errUp + errLow) / 2.0};
-
-        // std::cout << "TrackType " << tt << ": "
-        //           << "Eff=" << p_hat << ", "
-        //           << "N_eff=" << n_eff << ", "
-        //           << "Err=" << results[tt][1] << std::endl;
     }
 
     std::vector<double> final_results;

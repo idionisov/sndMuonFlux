@@ -1,5 +1,6 @@
 import csv
 import os
+from typing import Optional
 
 import numpy as np
 import ROOT
@@ -186,13 +187,11 @@ def mc_track_crossed_fiducial_area(
 
 def sf_track_is_reconstructible(
     mcEvent: ROOT.TChain
-) -> dict:
+) -> bool:
     nMCPoints = {
         'h': {1:0, 2:0, 3:0, 4:0, 5:0},
         'v': {1:0, 2:0, 3:0, 4:0, 5:0}
     }
-
-    nScifiPoints = {'h': 0, 'v': 0}
 
     for mcPoint in mcEvent.ScifiPoint:
         if not (
@@ -201,40 +200,32 @@ def sf_track_is_reconstructible(
         ): continue
 
         detID = mcPoint.GetDetectorID()
+        station = detID // 1000000
+        planeType = (detID // 100000) % 2 # 0: H, 1: V
+        
+        if 1 <= station <= 5:
+            if planeType == 0:
+                nMCPoints['h'][station] += 1
+            else:
+                nMCPoints['v'][station] += 1
 
-        # Checking for reconstructibility of SciFi tracks
+    nV = 0
+    nH = 0
+    for s in range(1, 6):
+        if nMCPoints['v'][s] > 0: nV += 1
+        if nMCPoints['h'][s] > 0: nH += 1
 
-        # Second digit:
-        #   - type of the plane:
-        #       - 0: Horizontal fiber plane
-        #       - 1: Vertical fiber plane
-        if int( (detID/100000)%2 ) == 0:
-            nMCPoints['h'][int(detID/1e+6)]+=1
-        elif int( (detID/100000)%2 ) == 1:
-            nMCPoints['v'][int(detID/1e+6)]+=1
-
-    for sfPlane in range(1, len(nMCPoints['v'])+1):
-        if nMCPoints['v'][sfPlane]>0:
-            nScifiPoints['v']+=1
-
-        if nMCPoints['h'][sfPlane]>0:
-            nScifiPoints['h']+=1
-
-    if (nScifiPoints['h'] >= 3 and nScifiPoints['v'] >= 3):
-        return True
-    else:
-        return False
+    return (nV >= 3 and nH >= 3)
 
 
 
 def ds_track_is_reconstructible(
     mcEvent: ROOT.TChain
-) -> dict:
+) -> bool:
     nMCPoints = {
         'h': {1:0, 2:0, 3:0, 4:0},
         'v': {1:0, 2:0, 3:0, 4:0}
     }
-    nDSPoints = {'h': 0, 'v': 0}
 
     for mcPoint in mcEvent.MuFilterPoint:
         if (
@@ -245,23 +236,23 @@ def ds_track_is_reconstructible(
             if detID < 30000 or detID > 34999:
                 continue
 
-            station = int(str(detID)[1])+1
-            barNum = int(str(detID)[-3:])
+            station = (detID // 1000) % 10 + 1
+            barNum = detID % 1000
 
-            if barNum > 59:
-                nMCPoints['v'][station] += 1
-            else:
-                nMCPoints['h'][station] += 1
+            if 1 <= station <= 4:
+                if barNum > 59:
+                    nMCPoints['v'][station] += 1
+                else:
+                    nMCPoints['h'][station] += 1
 
 
-    for dsPlane in range(1, 5):
-        if nMCPoints['v'][dsPlane] > 0: nDSPoints['v'] += 1
-        if nMCPoints['h'][dsPlane] > 0: nDSPoints['h'] += 1
+    nV = 0
+    nH = 0
+    for s in range(1, 5):
+        if nMCPoints['v'][s] > 0: nV += 1
+        if nMCPoints['h'][s] > 0: nH += 1
 
-    if (nDSPoints['h'] >= 3 and nDSPoints['v'] >= 3):
-        return True
-    else:
-        return False
+    return (nV >= 3 and nH >= 3)
 
 def n_eff(weights):
     w = np.asarray(weights, dtype=float)
@@ -339,7 +330,14 @@ def get_trkeff_mct(
             3:  _ds and muon_passed_within_A[3],
             13: _ds and muon_passed_within_A[13],
         }
-        weight = entry.MCTrack[0].GetWeight() * Ks
+        
+        weight = 1.0
+        if entry.MCTrack.GetEntries() > 0:
+            weight = entry.MCTrack[0].GetWeight()
+            if weight == 0: weight = 1.0
+            weight *= Ks
+        else:
+            weight = Ks
 
         for tt in trackTypes:
             if not reco[tt]:
@@ -351,8 +349,8 @@ def get_trkeff_mct(
                 if trk.getTrackType() != tt:
                     continue
 
-                xz = trk.getAngleXZ()
-                yz = trk.getAngleYZ()
+                xz = trk.getAngleXZ() * 1e3 # mrad
+                yz = trk.getAngleYZ() * 1e3 # mrad
                 if not (
                     xz_min <= xz <= xz_max and
                     yz_min <= yz <= yz_max
@@ -374,15 +372,12 @@ def get_trkeff_mct(
         w_pass = weights[tt][passed[tt]].sum()
         w_total = weights[tt].sum()
 
-        # w2_pass = (weights[tt][passed[tt]] ** 2).sum()
-        # w2_total = (weights[tt] ** 2).sum()
-
         p_hat = w_pass / w_total  if w_total>0 else 0.0
-        n_eff = pythonHelpers.trkeff.n_eff(weights[tt])
-        k_eff = p_hat * n_eff
+        n_eff_val = n_eff(weights[tt])
+        k_eff = p_hat * n_eff_val
 
         a = k_eff + 1.0
-        b = n_eff - k_eff + 1.0
+        b = n_eff_val - k_eff + 1.0
         low_q, high_q = 0.15865, 0.84135
         lo_b = beta.ppf(low_q, a, b)
         hi_b = beta.ppf(high_q, a, b)

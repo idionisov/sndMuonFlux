@@ -5,7 +5,7 @@ import sys
 # Add project root to path to allow importing from pythonHelpers
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-# from typing import Union
+# from typing import Optional
 # import numpy as np
 import ROOT
 
