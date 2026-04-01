@@ -66,36 +66,76 @@ std::pair<double, double> computeTrackingEfficiency(
     const TH2* hPassed = dynamic_cast<const TH2*>(teff.GetPassedHistogram());
     const TH2* hTotal  = dynamic_cast<const TH2*>(teff.GetTotalHistogram());
 
+    if (!hPassed || !hTotal) return {0.0, 0.0};
 
     int binx_min = hTotal->GetXaxis()->FindBin(xmin);
     int binx_max = hTotal->GetXaxis()->FindBin(xmax);
     int biny_min = hTotal->GetYaxis()->FindBin(ymin);
     int biny_max = hTotal->GetYaxis()->FindBin(ymax);
 
-    std::vector<double> effs;
+    double total_passed = 0.0;
+    double total_total = 0.0;
 
+    // Store bin data to calculate variance later
+    struct BinData { double p; double t; };
+    std::vector<BinData> bins;
+
+    // 1. Pool data
     for (int ix = binx_min; ix <= binx_max; ix++) {
         for (int iy = biny_min; iy <= biny_max; iy++) {
-
             int bin = hTotal->GetBin(ix, iy);
+            double t = hTotal->GetBinContent(bin);
+            double p = hPassed->GetBinContent(bin);
 
-            if (!teff.GetTotalHistogram()->GetBinContent(bin))
-                continue;
-
-            effs.push_back(teff.GetEfficiency(bin));
+            if (t > 0) {
+                total_total += t;
+                total_passed += p;
+                bins.push_back({p, t});
+            }
         }
     }
 
-    if (effs.empty())
-        return {0.0, 0.0};
+    if (total_total <= 0.0) return {0.0, 0.0};
 
-    double sum = std::accumulate(effs.begin(), effs.end(), 0.0);
-    double mean_eff = sum / effs.size();
+    // 2. Calculate Global Efficiency and Global Statistical Error
+    double mean_eff = total_passed / total_total;
+    // Using standard binomial error for the global stat error
+    double global_stat_err_sq = (mean_eff * (1.0 - mean_eff)) / total_total;
 
-    double sq_sum = std::inner_product(effs.begin(), effs.end(), effs.begin(), 0.0);
-    double stdev_eff = std::sqrt(sq_sum / effs.size() - mean_eff * mean_eff);
+    // If there is only 1 bin, there is no spatial variance.
+    if (bins.size() <= 1) {
+        return {mean_eff, std::sqrt(global_stat_err_sq)};
+    }
 
-    return {mean_eff, stdev_eff};
+    // 3. Calculate Spatial (Systematic) Variance
+    double weighted_sq_diff_sum = 0.0;
+    double expected_stat_var_sum = 0.0;
+
+    for (const auto& b : bins) {
+        double eff_i = b.p / b.t;
+        double weight = b.t / total_total; // Weight bins by their track count
+
+        // Observed variance of this bin from the mean
+        weighted_sq_diff_sum += weight * (eff_i - mean_eff) * (eff_i - mean_eff);
+
+        // Expected statistical variance of this specific bin
+        // (If eff_i is 1 or 0, this is 0, which is handled correctly)
+        expected_stat_var_sum += weight * (eff_i * (1.0 - eff_i) / b.t);
+    }
+
+    // True spatial variance = Observed variance - Expected Statistical noise
+    double spatial_syst_err_sq = weighted_sq_diff_sum - expected_stat_var_sum;
+
+    // If spatial_syst_err_sq < 0, it means all observed spread is purely
+    // explained by statistical fluctuations. We floor it at 0.
+    if (spatial_syst_err_sq < 0.0) {
+        spatial_syst_err_sq = 0.0;
+    }
+
+    // 4. Combine in Quadrature
+    double total_err = std::sqrt(global_stat_err_sq + spatial_syst_err_sq);
+
+    return {mean_eff, total_err};
 }
 
 

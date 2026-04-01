@@ -160,6 +160,7 @@ std::vector<double> computeTrackingEfficiencies_TT(
 
         if (isMC) {
             weight = dynamic_cast<ShipMCTrack*>(mcTracks->At(0))->GetWeight();
+            if (weight==0) weight=1.0;
         }
 
         for (const auto& [candTrackType, i_candTrackType] : trackTypeToIndex) {

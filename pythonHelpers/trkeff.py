@@ -114,22 +114,19 @@ def save_trkeff_to_root(
         "trkeffErr13":  effs.get(13, (0,0))[1]
     }
 
-    # Avoid duplicates if we are standardizing an existing file
     is_duplicate = any(r["Run"] == run for r in existing_rows)
     if not is_duplicate:
         existing_rows.append(new_row)
 
     f = ROOT.TFile(filename, "UPDATE")
-    # If the tree already exists, we might want to overwrite it with the standardized version
     old_tree = f.Get(tree_name)
     if old_tree:
         f.Delete(f"{tree_name};*")
 
-        tree = ROOT.TTree(tree_name, "Tracking efficiencies")
-        ROOT.SetOwnership(tree, False)
-        
-        # Buffers
+    tree = ROOT.TTree(tree_name, "Tracking efficiencies")
+    ROOT.SetOwnership(tree, False) 
     
+    # Buffers
     b_run = array('i', [0]); tree.Branch("Run", b_run, "Run/I")
     b_fill = array('i', [0]); tree.Branch("Fill", b_fill, "Fill/I")
     b_eff1 = array('f', [0]); tree.Branch("trkeff1", b_eff1, "trkeff1/F")
@@ -156,7 +153,6 @@ def save_trkeff_to_root(
 
     tree.Write()
     f.Close()
-
 
 
 def there_is_a_muon(
