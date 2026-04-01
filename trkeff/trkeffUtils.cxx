@@ -61,7 +61,8 @@ bool isNearUS5Bar(sndRecoTrack *track, TClonesArray *mfHits, double distance){
 std::pair<double, double> computeTrackingEfficiency(
     const TEfficiency& teff,
     double xmin, double xmax,
-    double ymin, double ymax
+    double ymin, double ymax,
+    bool verbose        // for debugging
 ){
     const TH2* hPassed = dynamic_cast<const TH2*>(teff.GetPassedHistogram());
     const TH2* hTotal  = dynamic_cast<const TH2*>(teff.GetTotalHistogram());
@@ -76,7 +77,6 @@ std::pair<double, double> computeTrackingEfficiency(
     double total_passed = 0.0;
     double total_total = 0.0;
 
-    // Store bin data to calculate variance later
     struct BinData { double p; double t; };
     std::vector<BinData> bins;
 
@@ -97,47 +97,39 @@ std::pair<double, double> computeTrackingEfficiency(
 
     if (total_total <= 0.0) return {0.0, 0.0};
 
-    // 2. Calculate Global Efficiency and Global Statistical Error
     double mean_eff = total_passed / total_total;
-    // Using standard binomial error for the global stat error
-    double global_stat_err_sq = (mean_eff * (1.0 - mean_eff)) / total_total;
+    double global_stat_var = (mean_eff * (1.0 - mean_eff)) / total_total;
 
-    // If there is only 1 bin, there is no spatial variance.
-    if (bins.size() <= 1) {
-        return {mean_eff, std::sqrt(global_stat_err_sq)};
+    double spatial_syst_var = 0.0;
+    if (bins.size() > 1) {
+        double observed_var = 0.0;
+        double expected_stat_var_sum = 0.0;
+
+        for (const auto& b : bins) {
+            double eff_i = b.p / b.t;
+            double weight = b.t / total_total;
+
+            observed_var += weight * std::pow(eff_i - mean_eff, 2);
+            expected_stat_var_sum += weight * (eff_i * (1.0 - eff_i) / b.t);
+        }
+
+        spatial_syst_var = std::max(0.0, observed_var - expected_stat_var_sum);
     }
 
-    // 3. Calculate Spatial (Systematic) Variance
-    double weighted_sq_diff_sum = 0.0;
-    double expected_stat_var_sum = 0.0;
+    double total_var = global_stat_var + spatial_syst_var;
+    double total_err = std::sqrt(total_var);
 
-    for (const auto& b : bins) {
-        double eff_i = b.p / b.t;
-        double weight = b.t / total_total; // Weight bins by their track count
+    if (verbose) {
+        double stat_frac = total_var > 0 ? global_stat_var / total_var : 1.0;
+        double syst_frac = total_var > 0 ? spatial_syst_var / total_var : 0.0;
 
-        // Observed variance of this bin from the mean
-        weighted_sq_diff_sum += weight * (eff_i - mean_eff) * (eff_i - mean_eff);
-
-        // Expected statistical variance of this specific bin
-        // (If eff_i is 1 or 0, this is 0, which is handled correctly)
-        expected_stat_var_sum += weight * (eff_i * (1.0 - eff_i) / b.t);
+        std::cout << "[Eff]: " << mean_eff << "+/-" << total_err << std::endl;
+        std::cout << "[Error breakdown]: +/- " << stat_frac * total_err << " (stat) "
+                  << "+/- " << syst_frac * total_err << " (syst)" << std::endl;
     }
-
-    // True spatial variance = Observed variance - Expected Statistical noise
-    double spatial_syst_err_sq = weighted_sq_diff_sum - expected_stat_var_sum;
-
-    // If spatial_syst_err_sq < 0, it means all observed spread is purely
-    // explained by statistical fluctuations. We floor it at 0.
-    if (spatial_syst_err_sq < 0.0) {
-        spatial_syst_err_sq = 0.0;
-    }
-
-    // 4. Combine in Quadrature
-    double total_err = std::sqrt(global_stat_err_sq + spatial_syst_err_sq);
 
     return {mean_eff, total_err};
 }
-
 
 
 EffResults createAndSaveTEffs(
@@ -228,7 +220,7 @@ EffResults createAndSaveTEffs(
             }
 
             if (groupName == "x.y") {
-                results.at(i) = computeTrackingEfficiency(*teff, xmin, xmax, ymin, ymax);
+                results.at(i) = computeTrackingEfficiency(*teff, xmin, xmax, ymin, ymax, true);
             }
 
             delete teff;
