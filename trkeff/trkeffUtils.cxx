@@ -1,6 +1,8 @@
 #include <climits>
 #include <cmath>
 #include <map>
+#include <numeric>
+#include <vector>
 
 #include "TMath.h"
 #include "TEfficiency.h"
@@ -55,52 +57,90 @@ bool isNearUS5Bar(sndRecoTrack *track, TClonesArray *mfHits, double distance){
 
 
 
-
 std::pair<double, double> computeTrackingEfficiency(
     const TEfficiency& teff,
     double xmin, double xmax,
-    double ymin, double ymax
+    double ymin, double ymax,
+    bool verbose // for debugging
 ){
     const TH2* hPassed = dynamic_cast<const TH2*>(teff.GetPassedHistogram());
     const TH2* hTotal  = dynamic_cast<const TH2*>(teff.GetTotalHistogram());
 
+    if (!hPassed || !hTotal) return {0.0, 0.0};
 
     int binx_min = hTotal->GetXaxis()->FindBin(xmin);
     int binx_max = hTotal->GetXaxis()->FindBin(xmax);
     int biny_min = hTotal->GetYaxis()->FindBin(ymin);
     int biny_max = hTotal->GetYaxis()->FindBin(ymax);
 
-    double sum = 0.0;
-    double sumsq = 0.0;
-    int count = 0;
+    struct BinData { double eff; double w; };
+    std::vector<BinData> bins;
+
+    double sum_w = 0.0;     // Total tracks
+    double sum_w_eff = 0.0; // Total passed tracks
+    double sum_w_sq = 0.0;  // Sum of squared weights (needed for variance correction)
 
     for (int ix = binx_min; ix <= binx_max; ix++) {
         for (int iy = biny_min; iy <= biny_max; iy++) {
+            int bin = hTotal->GetBin(ix, iy); // Global bin index
+            double t = hTotal->GetBinContent(bin);
+            double p = hPassed->GetBinContent(bin);
 
-            int bin = hTotal->GetBin(ix, iy);
+            if (t > 0) {
+                // Bypass TEfficiency errors and calculate raw bin efficiency
+                double eff = p / t; 
+                
+                // Track-Weighting: Weight is exactly the number of tracks
+                double w = t; 
 
-            if (!teff.GetTotalHistogram()->GetBinContent(bin))
-                continue;
+                sum_w += w;
+                sum_w_sq += (w * w);
+                sum_w_eff += (w * eff);
 
-            double eff = teff.GetEfficiency(bin);
-            double err = teff.GetEfficiencyErrorLow(bin);
-
-            sum   += eff;
-            sumsq += err*err;
-            count++;
+                bins.push_back({eff, w});
+            }
         }
     }
 
-    if (count == 0)
-        return {0.0, 0.0};
+    if (sum_w <= 0.0 || bins.empty()) return {0.0, 0.0};
 
-    double mean_eff = sum / count;
-    double stdev_eff = std::sqrt(sumsq) / count;
+    // 1. The Track-Weighted Mean (Mathematically identical to Total Passed / Total Tracks)
+    double mean_eff = sum_w_eff / sum_w;
 
-    return {mean_eff, stdev_eff};
+    // 2. Global Statistical Error on the Mean (Standard binomial statistics)
+    double global_stat_var = (mean_eff * (1.0 - mean_eff)) / sum_w;
+
+    // 3. Track-Weighted Spatial Spread (Population Variance)
+    double spatial_var = 0.0;
+    if (bins.size() > 1) {
+        double weighted_sq_diff_sum = 0.0;
+        for (const auto& b : bins) {
+            weighted_sq_diff_sum += b.w * std::pow(b.eff - mean_eff, 2);
+        }
+        
+        // Unbiased weighted sample variance formula (reliability weights)
+        double correction = sum_w / ((sum_w * sum_w) - sum_w_sq);
+        spatial_var = correction * weighted_sq_diff_sum;
+    }
+
+    double stat_err_mean = std::sqrt(global_stat_var);
+    double syst_err_spatial = std::sqrt(spatial_var);
+    
+    // Unified error for standard error propagation
+    double total_unified_variance = global_stat_var + spatial_var;
+    double total_unified_err = std::sqrt(total_unified_variance);
+
+    if (verbose) {
+        std::cout << "[Eff]: " << mean_eff << std::endl;
+        std::cout << "  -> Total combined error: +/- " << total_unified_err << std::endl;
+        std::cout << "  -> Error on the mean: +/- " << stat_err_mean << " (stat)" << std::endl;
+        std::cout << "  -> Spatial spread across xy: +/- " << syst_err_spatial << " (syst)" << std::endl;
+        std::cout << "[Bins used]: " << bins.size() << std::endl;
+        std::cout << "[Total tracks in ROI]: " << sum_w << std::endl;
+    }
+
+    return {mean_eff, total_unified_err}; 
 }
-
-
 
 EffResults createAndSaveTEffs(
     int runNum,
@@ -190,7 +230,7 @@ EffResults createAndSaveTEffs(
             }
 
             if (groupName == "x.y") {
-                results.at(i) = computeTrackingEfficiency(*teff, xmin, xmax, ymin, ymax);
+                results.at(i) = computeTrackingEfficiency(*teff, xmin, xmax, ymin, ymax, true);
             }
 
             delete teff;

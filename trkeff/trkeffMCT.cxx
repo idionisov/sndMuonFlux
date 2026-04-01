@@ -32,7 +32,7 @@
 bool ThereIsAMuon(SNDLHCEventHeader* header, TClonesArray* mcTracks) {
     for (int i = 0; i < mcTracks->GetEntriesFast(); ++i) {
         ShipMCTrack* trk = (ShipMCTrack*)mcTracks->At(i);
-        if (std::abs(trk->GetPdgCode()) == 13) return true;
+        if (trk->GetPdgCode() == 13) return true;
     }
     return false;
 }
@@ -90,7 +90,7 @@ bool DsTrackIsReconstructible(TClonesArray* muFilterPoints) {
 bool McTrackCrossedFiducialArea(TClonesArray* mcTracks, double zRef, double xmin, double xmax, double ymin, double ymax) {
     for (int i = 0; i < mcTracks->GetEntriesFast(); ++i) {
         ShipMCTrack* trk = (ShipMCTrack*)mcTracks->At(i);
-        if (trk->GetMotherId() == -1 && std::abs(trk->GetPdgCode()) == 13) {
+        if (trk->GetMotherId() == -1 && trk->GetPdgCode() == 13) {
             double px = trk->GetPx();
             double py = trk->GetPy();
             double pz = trk->GetPz();
@@ -196,10 +196,12 @@ std::vector<double> computeTrackingEfficiencies_MCT(
         reco_map[3]  = _ds && McTrackCrossedFiducialArea(mcTracks, zRef3,  xmin, xmax, ymin, ymax);
         reco_map[13] = _ds && McTrackCrossedFiducialArea(mcTracks, zRef13, xmin, xmax, ymin, ymax);
 
-        double weight = 1.0;
+        double weight = Ks;
         if (mcTracks->GetEntriesFast() > 0) {
             ShipMCTrack* mc = (ShipMCTrack*)mcTracks->At(0);
-            weight = mc->GetWeight() * Ks;
+            double w = mc->GetWeight();
+            if (w == 0) w = 1.0;
+            weight = w * Ks;
         }
 
         for (int tt : trackTypes) {
@@ -260,11 +262,6 @@ std::vector<double> computeTrackingEfficiencies_MCT(
         double errLow = p_hat - lo_b;
 
         results[tt] = {p_hat, (errUp + errLow) / 2.0};
-
-        // std::cout << "TrackType " << tt << ": "
-        //           << "Eff=" << p_hat << ", "
-        //           << "N_eff=" << n_eff << ", "
-        //           << "Err=" << results[tt][1] << std::endl;
     }
 
     std::vector<double> final_results;

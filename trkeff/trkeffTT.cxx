@@ -156,10 +156,11 @@ std::vector<double> computeTrackingEfficiencies_TT(
             nextTrigger2 = ((lastStatusPercentage + 5) * nBreak) / 100;
         }
         ch->GetEntry(i_entry);
-//        if (!eventHeader->isIP1()) continue;
+        if (!eventHeader->isIP1()) continue;
 
         if (isMC) {
             weight = dynamic_cast<ShipMCTrack*>(mcTracks->At(0))->GetWeight();
+            if (weight==0) weight=1.0;
         }
 
         for (const auto& [candTrackType, i_candTrackType] : trackTypeToIndex) {
@@ -227,6 +228,7 @@ std::vector<double> computeTrackingEfficiencies_TT(
                 }
 
 
+                bool foundCand = false;
                 for (unsigned i_candTrack = 0; i_candTrack < tracks->GetEntries(); ++i_candTrack) {
                     auto candTrack = dynamic_cast<sndRecoTrack*>(tracks->At(i_candTrack));
 
@@ -244,6 +246,11 @@ std::vector<double> computeTrackingEfficiencies_TT(
                         TMath::Abs(yTag - yCand) > scifiToDSTrackDistance
                     ) continue;
 
+                    foundCand = true;
+                    break;
+                }
+
+                if (foundCand) {
                     getHist2D("x.y", i_candTrackType, true)->Fill(xTag, yTag, weight);
                     getHist1D("x",   i_candTrackType, true)->Fill(xTag, weight);
                     getHist1D("y",   i_candTrackType, true)->Fill(yTag, weight);
