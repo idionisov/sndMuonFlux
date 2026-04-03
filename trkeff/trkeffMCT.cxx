@@ -32,7 +32,7 @@
 bool ThereIsAMuon(SNDLHCEventHeader* header, TClonesArray* mcTracks) {
     for (int i = 0; i < mcTracks->GetEntriesFast(); ++i) {
         ShipMCTrack* trk = (ShipMCTrack*)mcTracks->At(i);
-        if (trk->GetPdgCode() == 13) return true;
+        if (std::abs(trk->GetPdgCode()) == 13) return true;
     }
     return false;
 }
@@ -90,7 +90,7 @@ bool DsTrackIsReconstructible(TClonesArray* muFilterPoints) {
 bool McTrackCrossedFiducialArea(TClonesArray* mcTracks, double zRef, double xmin, double xmax, double ymin, double ymax) {
     for (int i = 0; i < mcTracks->GetEntriesFast(); ++i) {
         ShipMCTrack* trk = (ShipMCTrack*)mcTracks->At(i);
-        if (trk->GetMotherId() == -1 && trk->GetPdgCode() == 13) {
+        if (trk->GetMotherId() == -1 && std::abs(trk->GetPdgCode()) == 13) {
             double px = trk->GetPx();
             double py = trk->GetPy();
             double pz = trk->GetPz();

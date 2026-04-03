@@ -385,3 +385,25 @@ def get_trkeff_mct(
         eff[tt], effErrUp[tt], effErrLow[tt] = p_hat, hi_b - p_hat, p_hat - lo_b
 
     return {tt: (eff[tt], (effErrUp[tt]+effErrLow[tt])/2) for tt in (1, 11, 3, 13)}
+
+
+def is_near_veto_bar(
+    track: ROOT.sndRecoTrack, mf_hits: ROOT.TClonesArray, distance: float = 3.0
+):
+    for mf_hit in mf_hits:
+        if mf_hit.GetSystem() == 1 and track.getDoca(mf_hit) <= distance:
+            return True
+    return False
+
+
+def is_near_us5_bar(
+    track: ROOT.sndRecoTrack, mf_hits: ROOT.TClonesArray, distance: float = 3.0
+):
+    for mf_hit in mf_hits:
+        if (
+            mf_hit.GetSystem() == 2
+            and mf_hit.GetPlane() == 4
+            and track.getDoca(mf_hit) <= distance
+        ):
+            return True
+    return False
