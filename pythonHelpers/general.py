@@ -1,11 +1,15 @@
-
 import csv
 import glob
 import os
 from array import array
-from typing import Union
+from typing import Optional, Union
 
 import ROOT
+
+sndsw_path = os.environ["SNDSW_ROOT"]
+ROOT.gInterpreter.ProcessLine(
+    f'#include "{sndsw_path}/analysis/tools/sndTchainGetter.h"'
+)
 
 
 def has_tree(input_str: str, tree_name: str) -> bool:
@@ -16,13 +20,18 @@ def has_tree(input_str: str, tree_name: str) -> bool:
         return False
 
 
-def load_snd_TChain(input_str: str) -> ROOT.TChain:
-    for tree_name in ("rawConv", "cbmsim"):
-        if has_tree(input_str, tree_name):
-            chain = ROOT.TChain(tree_name)
-            chain.Add(input_str)
-            return chain
-    raise ValueError(f"No rawConv or cbmsim tree found in: {input_str}")
+def load_snd_TChain(arg: Union[str, int]) -> ROOT.TChain:
+    def load_snd_tchain_from_files(input_str: str) -> ROOT.TChain:
+        for tree_name in ("rawConv", "cbmsim"):
+            if has_tree(input_str, tree_name):
+                chain = ROOT.TChain(tree_name)
+                chain.Add(input_str)
+                return chain
+        raise ValueError(f"No rawConv or cbmsim tree found in: {input_str}")
+
+    if isinstance(arg, int):
+        return ROOT.snd.analysis_tools.GetTChain(arg)
+    return load_snd_tchain_from_files(arg)
 
 
 def get_snd_run(input_str: str) -> int:
@@ -30,10 +39,12 @@ def get_snd_run(input_str: str) -> int:
     chain.GetEntry(0)
     return chain.EventHeader.GetRunId()
 
+
 def get_lhc_fill(input_str: str) -> int:
     chain = load_snd_TChain(input_str)
     chain.GetEntry(0)
     return chain.EventHeader.GetFillNumber()
+
 
 def load_run_info(input_str: str):
     ch = load_snd_TChain(input_str)
@@ -83,11 +94,9 @@ def load_cpp_extension(lib_name: str, build_subdir: str = "") -> None:
     print(f"Successfully loaded {lib_name}")
 
 
-def compute_area(
-    x_range: tuple[float, float],
-        y_range: tuple[float, float]
-) -> float:
+def compute_area(x_range: tuple[float, float], y_range: tuple[float, float]) -> float:
     return abs(x_range[1] - x_range[0]) * abs(y_range[1] - y_range[0])
+
 
 def get_outfiles(o: str = ""):
     if not o:
@@ -131,19 +140,21 @@ def is_mc(ch: ROOT.TChain) -> bool:
 
 def get_angle_xz(track):
     if isinstance(track, ROOT.ShipMCTrack):
-        return ROOT.TMath.ATan(track.GetPx()/track.GetPz())
+        return ROOT.TMath.ATan(track.GetPx() / track.GetPz())
     elif isinstance(track, ROOT.sndRecoTrack):
         return track.getAngleXZ()
     else:
         raise ValueError(f"Cannot get track angle of {type(track)}!")
 
+
 def get_angle_yz(track):
     if isinstance(track, ROOT.ShipMCTrack):
-        return ROOT.TMath.ATan(track.GetPy()/track.GetPz())
+        return ROOT.TMath.ATan(track.GetPy() / track.GetPz())
     elif isinstance(track, ROOT.sndRecoTrack):
         return track.getAngleYZ()
     else:
         raise ValueError(f"Cannot get track angle of {type(track)}!")
+
 
 def get_point_at_z(track, Z: float) -> ROOT.TVector3:
     if isinstance(track, ROOT.ShipMCTrack):
@@ -165,12 +176,10 @@ def get_point_at_z(track, Z: float) -> ROOT.TVector3:
     elif isinstance(track, ROOT.sndRecoTrack):
         start = track.getStart()
         mom = track.getTrackMom()
-        track_slope = (Z - start.Z())/mom.Z()
+        track_slope = (Z - start.Z()) / mom.Z()
 
         intersection_point = ROOT.TVector3(
-            start.X() + track_slope*mom.X(),
-            start.Y() + track_slope*mom.Y(),
-            Z
+            start.X() + track_slope * mom.X(), start.Y() + track_slope * mom.Y(), Z
         )
         return intersection_point
 
