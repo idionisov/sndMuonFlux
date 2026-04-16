@@ -29,7 +29,10 @@ Required environment variables:
     cd sndMuonFlux
     ```
 
-2. **Build the C++ extensions**:
+2. **Environment Setup**:
+   `alienv enter sndsw/latest`
+
+3. **Build the C++ extensions**:
 
     ```bash
     mkdir build && cd build
@@ -37,9 +40,6 @@ Required environment variables:
     make -j$(nproc)
     cd ..
     ```
-
-3. **Environment Setup**:
-   `alienv enter sndsw/latest`
 
 ## Usage
 
